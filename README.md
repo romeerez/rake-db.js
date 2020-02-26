@@ -120,6 +120,10 @@ This will fill table with data only when migrating.
 All database operations done in transaction so if query containing error it's not too bad,
 table will not be created, you can fix error and run again.
 
+## Migration directions
+
+You can define `exports.up` for migrate, `exports.down` for rollback or `exports.change` for both.
+
 ## All methods and options
 
 ```js
