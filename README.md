@@ -12,6 +12,8 @@ this library contain only basic minimum mentioned above.
 
 ## CLI
 
+Execute command with `npx` or `yarn`
+
 ```
 Usage: rake-db [command] [arguments]
 
