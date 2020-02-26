@@ -56,7 +56,7 @@ Generate arguments:
   * drop_*        template for drop table
 
 - other arguments considered as columns with types:
-  create_table 
+  create_table name:text created_at:date
 ```
 
 ## Versioning
