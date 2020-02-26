@@ -8,7 +8,7 @@ Currently that's all.
 Also currently only postgres is supported.
 
 Supporting other databases, schema file, plenty of features that `rake db` has requires contributions,
-this library now contains only basic minimum mentioned above.
+this library contain only basic minimum mentioned above.
 
 ## CLI
 
