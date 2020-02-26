@@ -1,0 +1,18 @@
+module.exports = {
+  bigint: 'bigint',
+  bigserial: 'bigserial',
+  boolean: 'boolean',
+  date: 'date',
+  decimal: 'decimal',
+  float: 'float8',
+  integer: 'integer',
+  text: 'text',
+  smallint: 'smallint',
+  smallserial: 'smallserial',
+  string: 'text',
+  time: 'time',
+  timestamp: 'timestamp',
+  timestamptz: 'timestamptz',
+  binary: 'bytea',
+  serial: 'serial',
+}
