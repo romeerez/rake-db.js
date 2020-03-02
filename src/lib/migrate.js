@@ -28,22 +28,19 @@ const getFiles = (rollback) => new Promise((resolve, reject) => {
   })
 })
 
-const migrate = (db, fn, version) =>
-  db.transaction(async (t) => {
-    try {
-      fn(t)
-      await t.sync()
-      const sql =
-        db.reverse ?
-          `DELETE FROM schema_migrations WHERE version = '${version}'` :
-          `INSERT INTO schema_migrations VALUES ('${version}')`
+const migrate = (db, fn, version) => {
+  return db.transaction(async (t) => {
+    fn(t)
+    await t.sync()
+    const sql =
+      db.reverse ?
+        `DELETE FROM schema_migrations WHERE version = '${version}'` :
+        `INSERT INTO schema_migrations VALUES ('${version}')`
 
-      t.exec(sql).catch(noop)
-      t.commit()
-    } catch (err) {
-
-    }
+    t.exec(sql).catch(noop)
+    t.commit()
   })
+}
 
 const migrateFile = async (db, version, file) => {
   const filePath = path.resolve(dbMigratePath(), file)
@@ -72,28 +69,34 @@ const migrateDb = async (db, files) => {
 }
 
 const migrateOrRollback = async (args, rollback) => {
-  const configs = await getConfig()
-  for (let env in configs) {
-    const config = configs[env]
-    const db = adapter(config, schema, {reverse: rollback})
-    await db.connect()
-    let [files, versions] = await Promise.all([getFiles(rollback), getMigratedVersions(db)])
-    versions = JSON.parse(versions)
-    if (rollback) {
-      const lastVersion = versions[versions.length - 1]
-      if (!lastVersion) {
-        files = []
-      } else {
-        const lastFile = files.find(({version}) => version === lastVersion)
-        files = [lastFile]
-      }
-    } else
-      files = files.filter(file => !versions.includes(file.version))
+  let db
+  try {
+    const configs = await getConfig()
+    for (let env in configs) {
+      const config = configs[env]
+      db = adapter(config, schema, {reverse: rollback})
+      await db.connect()
+      let [files, versions] = await Promise.all([getFiles(rollback), getMigratedVersions(db)])
+      versions = JSON.parse(versions)
+      if (rollback) {
+        const lastVersion = versions[versions.length - 1]
+        if (!lastVersion) {
+          files = []
+        } else {
+          const lastFile = files.find(({version}) => version === lastVersion)
+          files = [lastFile]
+        }
+      } else
+        files = files.filter(file => !versions.includes(file.version))
 
-    if (files.length)
-      await migrateDb(db, files)
+      if (files.length)
+        await migrateDb(db, files)
 
-    db.close()
+      db.close()
+    }
+  } catch (err) {
+    if (db) db.close()
+    console.error(err)
   }
 }
 

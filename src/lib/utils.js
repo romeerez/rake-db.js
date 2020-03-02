@@ -1,5 +1,6 @@
 const path = require('path')
 const fs = require('fs')
+// const {Adapter} = require('pg-adapter')
 const {Adapter} = require('pg-adapter')
 
 const dbConfigPath = () =>
