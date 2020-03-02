@@ -23,8 +23,6 @@ module.exports = class CreateTable extends Table {
     sql.push(`CREATE TABLE ${this.tableName} (`)
     sql.push(this.lines.length ? '\n  ' + this.lines.join(',\n  ') : '')
     sql.push('\n)')
-    console.log(sql.join(''))
-    process.exit()
     db.exec(sql.join('')).catch(noop)
 
     for (let args of this.indices) {
