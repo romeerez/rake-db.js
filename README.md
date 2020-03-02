@@ -12,7 +12,9 @@ this library contain only basic minimum mentioned above.
 
 ## CLI
 
-Execute command with `npx` or `yarn`
+Execute command with `npx` (bit faster) or `yarn`, for example:
+
+`npx rake-db help` will output:
 
 ```
 Usage: rake-db [command] [arguments]
