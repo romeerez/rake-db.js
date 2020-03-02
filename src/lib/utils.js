@@ -90,9 +90,9 @@ const adapter = (config, Class = Adapter, params = {}) =>
 const join = (...args) => {
   if (camelCase)
     return (
-      args[0].toLowerCase() +
+      args[0] +
       args.slice(1).map(word =>
-        word[0].toUpperCase() + word.slice(1).toLowerCase()
+        word[0].toUpperCase() + word.slice(1)
       ).join('')
     )
   else
