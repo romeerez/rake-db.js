@@ -40,12 +40,13 @@ Migration files will be generated into:
 - current_dir/db/migrate
 
 Commands:
+  init            create empty directories and database.json
   create          create all databases
   drop            drop all databases
   g, generate     generate migration file
   migrate         migrate all pending in all dbs
   rollback        rollback the last migrated in all dbs
-  h, help         print this message
+  no or unknown   print this message
   
 Generate arguments:
 - (required) first argument is migration name
