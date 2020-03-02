@@ -10,7 +10,7 @@ Also currently only postgres is supported.
 Supporting other databases, schema file, plenty of features that `rake db` has requires contributions,
 this library contain only basic minimum mentioned above.
 
-By default column, index and foreign keys names are generated in camelCase, wich is configurable in `database.json`
+By default column, index and foreign keys names are generated in camelCase, which is configurable in `database.json`
 
 ## CLI
 
