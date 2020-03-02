@@ -1,6 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-const Adapter = require('pg-adapter')
+const {Adapter} = require('pg-adapter')
 
 const dbConfigPath = () =>
   process.env.DB_CONFIG_PATH

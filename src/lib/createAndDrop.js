@@ -4,10 +4,8 @@ const {getConfig, adapter} = require('./utils')
 const execCreateOrDrop = (utility, config, callback) => {
   const command = utility + ' ' + config.database
   exec(command, async (error, stdout, stderr) => {
-    if (error)
-      console.error(error)
-    else if (stderr)
-      console.error(stderr)
+    if (stderr)
+      console.error(stderr.trim())
     else {
       if (stdout.length)
         console.log(stdout)
