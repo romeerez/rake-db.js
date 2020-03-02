@@ -6,10 +6,10 @@ const {addForeignKey, removeForeignKey} = require('./foreignKey')
 const {noop} = require('../utils')
 
 const addConstraint = (name, sql) =>
-  `ADD CONSTRAINT ${sql ? `${name} ${sql}` : name}`
+  `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
 
 const removeConstraint = (name) =>
-  `DROP CONSTRAINT ${name}`
+  `DROP CONSTRAINT "${name}"`
 
 module.exports = class ChangeTable extends Table {
   addColumnSql = (sql) =>
@@ -58,8 +58,8 @@ module.exports = class ChangeTable extends Table {
 
   remove = (name, type, options) => {
     if (this.reverse)
-      return this.addColumnSql(addColumn(name, type, options))
-    this.execute(removeColumn(name, type, options))
+      return this.addColumnSql(addColumn(`"${name}"`, type, options))
+    this.execute(removeColumn(`"${name}"`, type, options))
   }
 
   removeIndex = (name, options = {}) =>
@@ -75,7 +75,7 @@ module.exports = class ChangeTable extends Table {
       fn(this)
 
     if (this.lines.length) {
-      let sql = `ALTER TABLE ${this.tableName}`
+      let sql = `ALTER TABLE "${this.tableName}"`
       sql += '\n' + this.lines.join(',\n')
       db.exec(sql).catch(noop)
     }

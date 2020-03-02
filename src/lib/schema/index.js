@@ -9,7 +9,7 @@ exports.addIndex = (table, name, options = {}) => {
     sql.push('UNIQUE')
   sql.push('INDEX')
   const indexName = getIndexName(table, name, options)
-  sql.push(indexName)
+  sql.push(`"${indexName}"`)
 
   if (options.polymorphic && !Array.isArray(name))
     name = [join(name, 'id'), join(name, 'type')]
@@ -17,7 +17,7 @@ exports.addIndex = (table, name, options = {}) => {
   let inner
   if (Array.isArray(name))
     inner = name.map(name => {
-      let result = name
+      let result = `"${name}"`
       if (typeof options.length === 'object' && options.length[name])
         result += `(${options.length[name]})`
       if (typeof options.order === 'object' && options.order[name])
@@ -25,13 +25,13 @@ exports.addIndex = (table, name, options = {}) => {
       return result
     }).join(', ')
   else {
-    inner = name
+    inner = `"${name}"`
     if (options.length)
       inner += `(${options.length})`
     if (options.order)
       inner += ` ${options.order}`
   }
-  sql.push('ON', table)
+  sql.push('ON', `"${table}"`)
   if (options.using)
     sql.push('USING', options.using)
   sql.push(`(${inner})`)
@@ -50,7 +50,7 @@ exports.addIndex = (table, name, options = {}) => {
 }
 
 exports.removeIndex = (table, name, options = {}) => {
-  const sql = ['DROP INDEX', getIndexName(table, name, options)]
+  const sql = ['DROP INDEX', `"${getIndexName(table, name, options)}"`]
   let mode = options.mode
   if (mode) {
     mode = mode.toUpperCase()

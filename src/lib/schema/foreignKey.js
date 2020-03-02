@@ -25,8 +25,8 @@ const references = ({toTable, primaryKey = 'id', onDelete, onUpdate}) => {
   const sql = []
   sql.push(
     'REFERENCES',
-    toTable,
-    `(${primaryKey})`
+    `"${toTable}"`,
+    `("${primaryKey}")`
   )
   if (onDelete) {
     const value = mapAction[onDelete]
@@ -95,10 +95,10 @@ exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
     const {primaryKey = ['id', 'type']} = options
     const constraintName = getConstraintName(table, foreignKey, options)
 
-    let sql = `FOREIGN KEY (${foreignKey[0]}) ${references({...options, primaryKey: primaryKey[0]})}`
+    let sql = `FOREIGN KEY ("${foreignKey[0]}") ${references({...options, primaryKey: primaryKey[0]})}`
     constraint(constraintName[0], sql)
 
-    sql = `FOREIGN KEY (${foreignKey[1]}) ${references({...options, primaryKey: primaryKey[1]})}`
+    sql = `FOREIGN KEY ("${foreignKey[1]}") ${references({...options, primaryKey: primaryKey[1]})}`
     constraint(constraintName[1], sql)
   } else {
     options = {
@@ -108,7 +108,7 @@ exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
     }
 
     const {foreignKey = join(name, 'id')} = options
-    const sql = `FOREIGN KEY (${foreignKey}) ${references(options)}`
+    const sql = `FOREIGN KEY ("${foreignKey}") ${references(options)}`
     constraint(getConstraintName(table, foreignKey, options), sql)
   }
 

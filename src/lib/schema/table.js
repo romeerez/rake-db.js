@@ -27,9 +27,9 @@ class Table {
 
   column = (name, type, options = {}) => {
     if (this.reverse)
-      return this.execute(removeColumn(name))
+      return this.execute(removeColumn(`"${name}"`))
 
-    this.addColumnSql(addColumn(name, type, options))
+    this.addColumnSql(addColumn(`"${name}"`, type, options))
 
     if (options.unique)
       if (options.index === true || !options.index)
@@ -69,9 +69,9 @@ class Table {
 
     const {tableName, comments} = this
     if (this.options.hasOwnProperty('comment'))
-      db.exec(`COMMENT ON TABLE ${tableName} IS ${db.quote(this.options.comment)}`).catch(noop)
+      db.exec(`COMMENT ON TABLE "${tableName}" IS ${db.quote(this.options.comment)}`).catch(noop)
     for (let [column, message] of comments)
-      db.exec(`COMMENT ON COLUMN ${tableName}.${column} IS ${db.quote(message)}`).catch(noop)
+      db.exec(`COMMENT ON COLUMN "${tableName}"."${column}" IS ${db.quote(message)}`).catch(noop)
   }
 }
 
