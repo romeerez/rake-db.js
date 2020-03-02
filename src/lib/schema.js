@@ -3,7 +3,7 @@ const {Adapter} = require('pg-adapter')
 const CreateTable = require('./schema/createTable')
 const ChangeTable = require('./schema/changeTable')
 const {plural, singular} = require('pluralize')
-const {noop} = require('./utils')
+const {noop, join} = require('./utils')
 
 const createTable = (db, name, fn, options) =>
   new CreateTable(name, options).__commit(db, fn)
@@ -12,7 +12,7 @@ const dropTable = (db, name) =>
   db.exec(`DROP TABLE ${plural(name)} CASCADE`).catch(noop)
 
 const createJoinTable = (db, tableOne, tableTwo, {tableName, columnOptions, ...options} = {}, cb) => {
-  const name = tableName || [tableOne, tableTwo].sort().join('_')
+  const name = tableName || join(...[tableOne, tableTwo].sort())
   columnOptions = {type: 'integer', null: false, ...columnOptions}
   const fn = (t) => {
     t.belongsTo(tableOne, columnOptions)
@@ -24,7 +24,7 @@ const createJoinTable = (db, tableOne, tableTwo, {tableName, columnOptions, ...o
 }
 
 const dropJoinTable = (db, tableOne, tableTwo, options, cb) => {
-  dropTable(db, options.tableName || [tableOne, tableTwo].sort().join('_'), null, ...options)
+  dropTable(db, options.tableName || join(...[tableOne, tableTwo].sort()), null, ...options)
 }
 
 module.exports = class Schema extends Adapter {
@@ -128,9 +128,9 @@ module.exports = class Schema extends Adapter {
   foreignKeyExists(fromTable, options) {
     let name
     if (typeof options === 'string')
-      name = `${fromTable}_${singular(options)}_id_fkey`
+      name = join(fromTable, singular(options), 'id', 'fkey')
     else
-      name = options.name || `${fromTable}_${options.column}_fkey`
+      name = options.name || join(fromTable, options.column, 'fkey')
 
     const value = this.value(
       'SELECT 1 FROM information_schema.table_constraints ' +

@@ -66,6 +66,7 @@ const validateConfig = (config) => {
   }
 }
 
+let camelCase = true
 const getConfig = async () => {
   const configSource = await getConfigSource()
   if (!configSource)
@@ -75,6 +76,10 @@ const getConfig = async () => {
     )
 
   let config = parseConfig(configSource)
+  if ('camelCase' in config) {
+    camelCase = config.camelCase
+    delete config.camelCase
+  }
   validateConfig(config)
   return config
 }
@@ -82,7 +87,19 @@ const getConfig = async () => {
 const adapter = (config, Class = Adapter, params = {}) =>
   new Class({ ...config, pool: 1, log: false, ...params })
 
+const join = (...args) => {
+  if (camelCase)
+    return (
+      args[0].toLowerCase() +
+      args.slice(1).map(word =>
+        word[0].toUpperCase() + word.slice(1).toLowerCase()
+      ).join('')
+    )
+  else
+    return args.map(word => word.toLowerCase()).join('_')
+}
+
 module.exports = {
   noop: () => {},
-  dbConfigPath, dbDirPath, dbMigratePath, getConfig, readFile, adapter
+  join, dbConfigPath, dbDirPath, dbMigratePath, getConfig, readFile, adapter
 }

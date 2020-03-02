@@ -1,5 +1,7 @@
+const {join} = require('../utils')
+
 const getIndexName = (table, name, options = {}) =>
-  options.name || `${table}_${name}_index`
+  options.name || join(table, name, 'index')
 
 exports.addIndex = (table, name, options = {}) => {
   const sql = ['CREATE']
@@ -10,7 +12,7 @@ exports.addIndex = (table, name, options = {}) => {
   sql.push(indexName)
 
   if (options.polymorphic && !Array.isArray(name))
-    name = [`${name}_id`, `${name}_type`]
+    name = [join(name, 'id'), join(name, 'type')]
 
   let inner
   if (Array.isArray(name))

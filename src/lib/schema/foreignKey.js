@@ -1,13 +1,14 @@
 const {plural, singular} = require('pluralize')
+const {join} = require('../utils')
 
 const changeIndex = (table, addIndex, name, index, polymorphic) => {
   if (index === true)
     index = {}
   if (polymorphic) {
-    if (!index.name) index.name = `${table}_${name}_index`
-    addIndex([`${name}_id`, `${name}_type`], index)
+    if (!index.name) index.name = join(table, name, 'index')
+    addIndex([join(name, 'id'), join(name, 'type')], index)
   } else {
-    addIndex(`${name}_id`, index)
+    addIndex(join(name, 'id'), index)
   }
 }
 
@@ -48,8 +49,10 @@ exports.reference = (table, column, addIndex, name, {polymorphic, type = 'intege
   name = singular(name)
 
   if (options.foreignKey === true)
-    options = {...options, foreignKey: {toTable: plural(name)}}
-  else if (typeof options.foreignKey === 'object')
+    options = {...options, foreignKey: {}}
+  if (typeof options.foreignKey === 'string')
+    options = {...options, foreignKey: {column: options.foreignKey}}
+  if (typeof options.foreignKey === 'object')
     if (!options.foreignKey.toTable)
       options = {...options, foreignKey: {...options.foreignKey, toTable: plural(name)}}
 
@@ -60,10 +63,10 @@ exports.reference = (table, column, addIndex, name, {polymorphic, type = 'intege
 
   let {index, ...withoutIndexOptions} = options
 
-  column(`${name}_id`, type, withoutIndexOptions)
+  column(join(name, 'id'), type, withoutIndexOptions)
   if (polymorphic) {
     const {index, ...typeOptions} = withoutIndexOptions
-    column(`${name}_type`, 'text', typeOptions)
+    column(join(name, 'type'), 'text', typeOptions)
   }
 
   if (index)
@@ -74,9 +77,9 @@ const getConstraintName = (table, foreignKey, options) => {
   if (options.name)
     return options.name
   if (options.polymorphic)
-    return [`${table}_${foreignKey[0]}_fkey`, `${table}_${foreignKey[1]}_fkey`]
+    return [join(table, foreignKey[0], 'fkey'), join(table, foreignKey[1], 'fkey')]
   else
-    return `${table}_${foreignKey}_fkey`
+    return join(table, foreignKey, 'fkey')
 }
 
 exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
@@ -88,7 +91,7 @@ exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
       toTable: plural(name),
       ...options
     }
-    const {foreignKey = [`${name}_id`, `${name}_type`]} = options
+    const {foreignKey = [join(name, 'id'), join(name, 'type')]} = options
     const {primaryKey = ['id', 'type']} = options
     const constraintName = getConstraintName(table, foreignKey, options)
 
@@ -104,7 +107,7 @@ exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
       ...options
     }
 
-    const {foreignKey = `${name}_id`} = options
+    const {foreignKey = join(name, 'id')} = options
     const sql = `FOREIGN KEY (${foreignKey}) ${references(options)}`
     constraint(getConstraintName(table, foreignKey, options), sql)
   }

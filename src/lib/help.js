@@ -16,7 +16,8 @@ Config file should look like:
     ...other connection options
   },
   "test": { same as above },
-  "production": { same as above }
+  "production": { same as above },
+  "camelCase": true // by default
 }
 
 Migration files will be generated into:
@@ -32,7 +33,7 @@ Commands:
   rollback        rollback the last migrated in all dbs
   no or unknown   print this message
   
-Generate arguments:
+Generate arguments: (no camel case here for better readability)
 - (required) first argument is migration name
   * create_*      template for create table
   * change_*      template for change table
@@ -41,5 +42,5 @@ Generate arguments:
   * drop_*        template for drop table
 
 - other arguments considered as columns with types:
-  create_table name:text created_at:date
+  create_table name:text createdAt:date
 `)

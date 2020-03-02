@@ -2,11 +2,19 @@ const fs = require('fs')
 const path = require('path')
 const {dbConfigPath, dbDirPath, dbMigratePath} = require('./utils')
 
+const initConfig =
+`{
+  "development": {
+    
+  },
+  "camelCase": true
+}`
+
 const createConfig = () => {
   const configPath = dbConfigPath() || path.join(process.cwd(), 'database.json')
   fs.access(configPath, (err) => {
     if (err)
-      fs.writeFile(configPath, '{\n  "development": {\n    \n  }\n}', (err) => {
+      fs.writeFile(configPath, initConfig, (err) => {
         if (err) throw new Error(err)
       })
   })
