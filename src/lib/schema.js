@@ -1,4 +1,4 @@
-const Adapter = require('pg-adapter')
+const {Adapter} = require('pg-adapter')
 const CreateTable = require('./schema/createTable')
 const ChangeTable = require('./schema/changeTable')
 const {plural, singular} = require('pluralize')
