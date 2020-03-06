@@ -1,7 +1,6 @@
 const path = require('path')
 const fs = require('fs')
-// const {Adapter} = require('pg-adapter')
-const {Adapter} = require('pg-adapter')
+const {Adapter, parseURL} = require('pg-adapter')
 
 const dbConfigPath = () =>
   process.env.DB_CONFIG_PATH
@@ -42,7 +41,14 @@ const getConfigSource = () =>
     )
   })
 
-const parseConfig = (json) => {
+const parseConfig = async () => {
+  const json = await getConfigSource()
+  if (!json)
+    throw new Error(
+      'Database config not found, expected to find it somewhere here:\n' +
+      search.join('\n')
+    )
+
   try {
     return JSON.parse(json)
   } catch (err) {
@@ -68,14 +74,9 @@ const validateConfig = (config) => {
 
 let camelCase = true
 const getConfig = async () => {
-  const configSource = await getConfigSource()
-  if (!configSource)
-    throw new Error(
-      'Database config not found, expected to find it somewhere here:\n' +
-      search.join('\n')
-    )
-
-  let config = parseConfig(configSource)
+  let config
+  const url = process.env.DATABASE_URL
+  config = url ? {default: parseURL(url)} : await parseConfig()
   if ('camelCase' in config) {
     camelCase = config.camelCase
     delete config.camelCase

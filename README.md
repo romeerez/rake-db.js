@@ -21,6 +21,10 @@ Execute command with `npx` (bit faster) or `yarn`, for example:
 ```
 Usage: rake-db [command] [arguments]
 
+DATABASE_URL env variable should be provided or a config file
+
+DATABASE_URL must have format postgres://user:password@host:port/database
+
 Config file for databases could be found in:
 - DB_CONFIG_PATH env variable (absolute path)
 - current_dir/database.json

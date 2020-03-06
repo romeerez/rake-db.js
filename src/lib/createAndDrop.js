@@ -18,7 +18,12 @@ const execCreateOrDrop = (utility, config, callback) => {
 }
 
 const createOrDrop = async (utility, callback) => {
-  const config = await getConfig()
+  let config
+  try {
+    config = await getConfig()
+  } catch (err) {
+    return
+  }
   for (let env in config)
     execCreateOrDrop(utility, config[env], callback)
 }
