@@ -1,5 +1,6 @@
 const {exec} = require("child_process")
-const {getConfig, adapter} = require('./utils')
+const {getConfig} = require('./utils')
+const {createForConfig} = require('./versionsTable')
 
 const execCreateOrDrop = (utility, config, callback) => {
   const command = utility + ' ' + config.database
@@ -28,16 +29,8 @@ const createOrDrop = async (utility, callback) => {
     execCreateOrDrop(utility, config[env], callback)
 }
 
-schemaMigrationsSQL = 'CREATE TABLE schema_migrations ( version TEXT NOT NULL )'
-
-const createSchemaMigrations = async (config) => {
-  const db = adapter(config)
-  await db.exec(schemaMigrationsSQL)
-  db.close()
-}
-
 const createDb = () =>
-  createOrDrop('createdb', createSchemaMigrations)
+  createOrDrop('createdb', createForConfig)
 
 const dropDb = (config) =>
   createOrDrop('dropdb')

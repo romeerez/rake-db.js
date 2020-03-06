@@ -49,13 +49,14 @@ Migration files will be generated into:
 - current_dir/db/migrate
 
 Commands:
-  init            create empty directories and database.json
-  create          create all databases
-  drop            drop all databases
-  g, generate     generate migration file
-  migrate         migrate all pending in all dbs
-  rollback        rollback the last migrated in all dbs
-  no or unknown   print this message
+  init                    create empty directories and database.json
+  create                  create all databases
+  create-versions-table   fox existing empty database
+  drop                    drop all databases
+  g, generate             generate migration file
+  migrate                 migrate all pending in all dbs
+  rollback                rollback the last migrated in all dbs
+  no or unknown           print this message
   
 Generate arguments: (no camel case here for better readability)
 - (required) first argument is migration name

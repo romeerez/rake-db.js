@@ -20,5 +20,7 @@ else if (command === 'migrate')
   require('./lib/migrate').migrate(args)
 else if (command === 'rollback')
   require('./lib/migrate').rollback(args)
+else if (command === 'create-versions-table')
+  require('./lib/versionsTable').create()
 else
   require('./lib/help')()
