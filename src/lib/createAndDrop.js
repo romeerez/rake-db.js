@@ -8,7 +8,6 @@ const execCreateOrDrop = (utility, config, callback) => {
     if (config.url)
         config = pg_adapter_1.parseUrl(config.url);
     let command = utility;
-    console.log(config);
     if (config.host)
         command += ' -h ' + config.host;
     if (config.port)

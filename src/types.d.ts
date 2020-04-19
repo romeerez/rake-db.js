@@ -5,7 +5,7 @@ export interface DbConfig {
     url?: string;
     database?: string;
     host?: string;
-    port?: number | string;
+    port?: number;
     user?: string;
     password?: string;
 }

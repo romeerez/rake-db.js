@@ -50,11 +50,15 @@ const parseConfig = async () => {
 };
 const validateConfig = (config) => {
     const invalidEnvs = [];
+    let validConfigs = {};
     for (let env in config) {
         if (config[env].url || config[env].database)
-            return;
-        invalidEnvs.push(env);
+            validConfigs[env] = config[env];
+        else
+            invalidEnvs.push(env);
     }
+    if (Object.keys(validConfigs).length !== 0)
+        return validConfigs;
     throw new Error('Invalid database config:\n' +
         `database option is required and not found in ${invalidEnvs.join(', ')} environments`);
 };
@@ -67,7 +71,7 @@ exports.getConfig = async () => {
         camelCase = config.camelCase;
         delete config.camelCase;
     }
-    validateConfig(config);
+    config = validateConfig(config);
     return config;
 };
 exports.adapter = (config, Class = pg_adapter_1.Adapter, params = {}) => {

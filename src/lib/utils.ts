@@ -61,11 +61,15 @@ const parseConfig = async () => {
 
 const validateConfig = (config: DbConfigs) => {
   const invalidEnvs: string[] = []
+  let validConfigs: DbConfigs = {}
   for (let env in config) {
     if (config[env].url || config[env].database)
-      return
-    invalidEnvs.push(env)
+      validConfigs[env] = config[env]
+    else
+      invalidEnvs.push(env)
   }
+  if (Object.keys(validConfigs).length !== 0)
+    return validConfigs
   throw new Error(
     'Invalid database config:\n' +
     `database option is required and not found in ${invalidEnvs.join(', ')} environments`
@@ -81,7 +85,7 @@ export const getConfig = async () => {
     camelCase = config.camelCase
     delete config.camelCase
   }
-  validateConfig(config)
+  config = validateConfig(config)
   return config
 }
 
