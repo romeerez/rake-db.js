@@ -1,7 +1,7 @@
 import Table from './table'
 import {addIndex} from './index'
 import {noop} from '../utils'
-import {Schema, TableCallback, TableOptions} from '../../types'
+import {Migration, TableCallback, TableOptions} from '../../types'
 
 export class CreateTable extends Table {
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
@@ -18,7 +18,7 @@ export class CreateTable extends Table {
   constraint = (name: string, sql?: string) =>
     this.execute(`CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`)
 
-  __commit = (db: Schema, fn?: TableCallback) => {
+  __commit = (db: Migration, fn?: TableCallback) => {
     if (fn) fn(this)
 
     const sql = []

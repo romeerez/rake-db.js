@@ -1,2 +1,2 @@
-export declare const createConfig: () => void;
-export declare const createMigrateDir: () => void;
+declare const _default: () => void;
+export default _default;

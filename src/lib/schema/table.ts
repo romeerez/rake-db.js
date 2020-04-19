@@ -5,7 +5,7 @@ import timestamps from './timestamps'
 import {plural} from 'pluralize'
 import {noop} from '../utils'
 import {
-  Schema,
+  Migration,
   AddIndexFunction,
   ColumnFunction,
   ColumnOptions,
@@ -91,7 +91,7 @@ export default class Table {
   foreignKey = (name: string, options?: ForeignKeyOptions) =>
     addForeignKey(this.tableName, this.constraint, this.index, name, options)
 
-  addComments = (db: Schema) => {
+  addComments = (db: Migration) => {
     if (this.reverse) return
 
     const {tableName, comments} = this

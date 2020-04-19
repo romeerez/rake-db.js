@@ -4,7 +4,7 @@ import {addIndex, removeIndex} from './index'
 import {addColumn, removeColumn} from './column'
 import {addForeignKey} from './foreignKey'
 import {noop} from '../utils'
-import {Schema, ColumnOptions, ForeignKeyOptions, IndexOptions} from '../../types'
+import {Migration, ColumnOptions, ForeignKeyOptions, IndexOptions} from '../../types'
 
 const addConstraint = (name: string, sql?: string) =>
   `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
@@ -71,7 +71,7 @@ export class ChangeTable extends Table {
   removeForeignKey = (name: string, options: ForeignKeyOptions) =>
     addForeignKey(this.tableName, this.removeConstraint, this.removeIndex, name, options)
 
-  __commit = (db: Schema, fn?: ChangeTableCallback) => {
+  __commit = (db: Migration, fn?: ChangeTableCallback) => {
     this.reverse = db.reverse
 
     if (fn)

@@ -1,7 +1,7 @@
 import { Adapter, AdapterProps } from 'pg-adapter';
 import { ChangeTableCallback } from './schema/changeTable';
 import { TableOptions, JoinTableOptions, ColumnOptions, TableCallback, ReferenceOptions, ForeignKeyOptions, IndexOptions } from '../types';
-export default class Schema extends Adapter {
+export default class Migration extends Adapter {
     reverse: boolean;
     constructor({ reverse, ...params }: AdapterProps & {
         reverse: boolean;

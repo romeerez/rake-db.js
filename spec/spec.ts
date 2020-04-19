@@ -1,4 +1,4 @@
-import Schema from '../src/lib/schema'
+import Migration from '../src/lib/migration'
 import {ChangeTable} from '../src/lib/schema/changeTable'
 
 class Sql extends Array {
@@ -12,20 +12,20 @@ let sql = new Sql()
 let originalExec: (...args: any[]) => any
 let originalValue: (...args: any[]) => any
 let nextValue: any
-const db = new Schema({reverse: false, pool: 0})
-const reverse = new Schema({reverse: true, pool: 0})
+const db = new Migration({reverse: false, pool: 0})
+const reverse = new Migration({reverse: true, pool: 0})
 
 beforeAll(() => {
   const mock = (s: string) => sql.push(s) && Promise.resolve(nextValue)
-  originalExec = Schema.prototype.exec
-  originalValue = Schema.prototype.value
-  Schema.prototype.exec = mock as (sql: string | TemplateStringsArray, ...args: any[]) => any
-  Schema.prototype.value = mock as (sql: string | TemplateStringsArray, ...args: any[]) => any
+  originalExec = Migration.prototype.exec
+  originalValue = Migration.prototype.value
+  Migration.prototype.exec = mock as (sql: string | TemplateStringsArray, ...args: any[]) => any
+  Migration.prototype.value = mock as (sql: string | TemplateStringsArray, ...args: any[]) => any
 })
 
 afterAll(() => {
-  Schema.prototype.exec = originalExec
-  Schema.prototype.value = originalValue
+  Migration.prototype.exec = originalExec
+  Migration.prototype.value = originalValue
 })
 
 const reset = () => {

@@ -1,6 +1,6 @@
-import Schema from './lib/schema';
+import Migration from './lib/migration';
 import Table from './lib/schema/table';
-export { Schema, Table };
+export { Migration, Table };
 export interface DbConfig {
     [key: string]: {
         database?: string;

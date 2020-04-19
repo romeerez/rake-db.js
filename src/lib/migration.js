@@ -28,7 +28,7 @@ const dropJoinTable = (db, tableOne, tableTwo, options) => {
     const tableName = typeof options === 'object' ? options.tableName : undefined;
     dropTable(db, tableName || utils_1.join(...[tableOne, tableTwo].sort()));
 };
-class Schema extends pg_adapter_1.Adapter {
+class Migration extends pg_adapter_1.Adapter {
     constructor({ reverse, ...params }) {
         super(params);
         this.reverse = reverse;
@@ -122,4 +122,4 @@ class Schema extends pg_adapter_1.Adapter {
         return this.reverse ? !value : value;
     }
 }
-exports.default = Schema;
+exports.default = Migration;

@@ -12,7 +12,7 @@ const initConfig = `{
   },
   "camelCase": true
 }`;
-exports.createConfig = () => {
+const createConfig = () => {
     const configPath = utils_1.dbConfigPath() || path_1.default.join(process.cwd(), 'database.json');
     fs_1.default.access(configPath, (err) => {
         if (err)
@@ -34,7 +34,7 @@ const createDbDir = (cb) => {
         });
     });
 };
-exports.createMigrateDir = () => {
+const createMigrateDir = () => {
     createDbDir(() => {
         const migratePath = utils_1.dbMigratePath();
         fs_1.default.access(migratePath, (err) => {
@@ -46,4 +46,8 @@ exports.createMigrateDir = () => {
             });
         });
     });
+};
+exports.default = () => {
+    createConfig();
+    createMigrateDir();
 };

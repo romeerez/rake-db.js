@@ -1,4 +1,4 @@
-import { Schema, ColumnFunction, ColumnOptions, ForeignKeyOptions, IndexOptions, ReferenceOptions, TableOptions } from '../../types';
+import { Migration, ColumnFunction, ColumnOptions, ForeignKeyOptions, IndexOptions, ReferenceOptions, TableOptions } from '../../types';
 export default class Table {
     tableName: string;
     reverse: boolean;
@@ -16,7 +16,7 @@ export default class Table {
     reference: (name: string, options?: ReferenceOptions | undefined) => void;
     belongsTo: (name: string, options?: ReferenceOptions | undefined) => void;
     foreignKey: (name: string, options?: ForeignKeyOptions | undefined) => void;
-    addComments: (db: Schema) => void;
+    addComments: (db: Migration) => void;
     bigint(name: string, options?: ColumnOptions): void;
     bigserial(name: string, options?: ColumnOptions): void;
     boolean(name: string, options?: ColumnOptions): void;

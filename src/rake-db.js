@@ -7,7 +7,7 @@ if (!firstArg)
 const commandArray = firstArg.split(':');
 const command = commandArray[0];
 if (command === 'init.ts')
-    require('./lib/init')();
+    require('./lib/init').default();
 else if (command === 'create')
     require('./lib/createAndDrop').createDb(args);
 else if (command === 'drop')
@@ -21,4 +21,4 @@ else if (command === 'rollback')
 else if (command === 'create-versions-table')
     require('./lib/versionsTable').create();
 else
-    require('./lib/help')();
+    require('./lib/help').default();

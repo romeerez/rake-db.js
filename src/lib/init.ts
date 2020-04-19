@@ -10,7 +10,7 @@ const initConfig =
   "camelCase": true
 }`
 
-export const createConfig = () => {
+const createConfig = () => {
   const configPath = dbConfigPath() || path.join(process.cwd(), 'database.json')
   fs.access(configPath, (err) => {
     if (err)
@@ -31,7 +31,7 @@ const createDbDir = (cb: (...args: any[]) => any) => {
   })
 }
 
-export const createMigrateDir = () => {
+const createMigrateDir = () => {
   createDbDir(() => {
     const migratePath = dbMigratePath()
     fs.access(migratePath, (err) => {
@@ -41,4 +41,9 @@ export const createMigrateDir = () => {
       })
     })
   })
+}
+
+export default () => {
+  createConfig()
+  createMigrateDir()
 }

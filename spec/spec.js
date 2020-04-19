@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const schema_1 = __importDefault(require("../src/lib/schema"));
+const migration_1 = __importDefault(require("../src/lib/migration"));
 class Sql extends Array {
     constructor() {
         super(...arguments);
@@ -15,18 +15,18 @@ let sql = new Sql();
 let originalExec;
 let originalValue;
 let nextValue;
-const db = new schema_1.default({ reverse: false, pool: 0 });
-const reverse = new schema_1.default({ reverse: true, pool: 0 });
+const db = new migration_1.default({ reverse: false, pool: 0 });
+const reverse = new migration_1.default({ reverse: true, pool: 0 });
 beforeAll(() => {
     const mock = (s) => sql.push(s) && Promise.resolve(nextValue);
-    originalExec = schema_1.default.prototype.exec;
-    originalValue = schema_1.default.prototype.value;
-    schema_1.default.prototype.exec = mock;
-    schema_1.default.prototype.value = mock;
+    originalExec = migration_1.default.prototype.exec;
+    originalValue = migration_1.default.prototype.value;
+    migration_1.default.prototype.exec = mock;
+    migration_1.default.prototype.value = mock;
 });
 afterAll(() => {
-    schema_1.default.prototype.exec = originalExec;
-    schema_1.default.prototype.value = originalValue;
+    migration_1.default.prototype.exec = originalExec;
+    migration_1.default.prototype.value = originalValue;
 });
 const reset = () => {
     sql.current = 0;

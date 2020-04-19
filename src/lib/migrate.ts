@@ -1,15 +1,15 @@
 import fs from 'fs'
 import path from 'path'
 import {getConfig, adapter, dbMigratePath, noop} from './utils'
+import Migration from './migration'
 import {Transaction} from 'pg-adapter'
-import Schema from './schema'
 
 type MigrationFile = {
   version: string,
   path: string,
 }
 
-const getMigratedVersions = (db: Schema) =>
+const getMigratedVersions = (db: Migration) =>
   db.value(
     `SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
     `FROM schema_migrations`
@@ -23,8 +23,12 @@ const getFiles = (rollback: boolean) => new Promise((resolve, reject) => {
     else
       allFiles.sort()
     const files: MigrationFile[] = []
-    allFiles.forEach(file => {
+    allFiles.forEach((file, i, all) => {
       const arr = file.split('_')
+      const match = file.match(/\..+$/)
+      if (!match) return
+      const ext = match[0]
+      if (ext !== '.js') return
       if (arr.length === 1) return
       const version = arr[0]
       if (version.length !== 14) return
@@ -34,22 +38,21 @@ const getFiles = (rollback: boolean) => new Promise((resolve, reject) => {
   })
 })
 
-const run = (db: Schema, fn: (t: Transaction) => any, version: string) => {
-  const {promise} = db.transaction(async (t) => {
+const run = (db: Migration, fn: (t: Migration) => any, version: string) => {
+  const {promise} = db.wrapperTransaction(db, async (t: Migration & Transaction) => {
     fn(t)
-    await db.sync()
+    await t.sync()
     const sql =
       db.reverse ?
         `DELETE FROM schema_migrations WHERE version = '${version}'` :
         `INSERT INTO schema_migrations VALUES ('${version}')`
 
     t.exec(sql).catch(noop)
-    t.commit()
   })
   return promise
 }
 
-const migrateFile = async (db: Schema, version: string, file: string) => {
+const migrateFile = async (db: Migration, version: string, file: string) => {
   const filePath = path.resolve(dbMigratePath(), file)
   const migration = require(filePath)
   if (!db.reverse && !migration.up && !migration.change)
@@ -64,7 +67,7 @@ const migrateFile = async (db: Schema, version: string, file: string) => {
   console.info(`${filePath} ${db.reverse ? 'rolled back' : 'migrated'}`)
 }
 
-const migrateDb = async (db: Schema, files: MigrationFile[]) => {
+const migrateDb = async (db: Migration, files: MigrationFile[]) => {
   for (let {path, version} of files) {
     try {
       await migrateFile(db, version, path)
@@ -81,7 +84,7 @@ const migrateOrRollback = async (rollback: boolean) => {
     const configs = await getConfig()
     for (let env in configs) {
       const config = configs[env]
-      db = <Schema>adapter(config, Schema, {reverse: rollback})
+      db = <Migration>adapter(config, Migration, {reverse: rollback})
       await db.connect()
       let [files, versions] = (
         await Promise.all([getFiles(rollback), getMigratedVersions(db)])

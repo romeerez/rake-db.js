@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const utils_1 = require("./utils");
-const schema_1 = __importDefault(require("./schema"));
+const migration_1 = __importDefault(require("./migration"));
 const getMigratedVersions = (db) => db.value(`SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
     `FROM schema_migrations`);
 const getFiles = (rollback) => new Promise((resolve, reject) => {
@@ -18,8 +18,14 @@ const getFiles = (rollback) => new Promise((resolve, reject) => {
         else
             allFiles.sort();
         const files = [];
-        allFiles.forEach(file => {
+        allFiles.forEach((file, i, all) => {
             const arr = file.split('_');
+            const match = file.match(/\..+$/);
+            if (!match)
+                return;
+            const ext = match[0];
+            if (ext !== '.js')
+                return;
             if (arr.length === 1)
                 return;
             const version = arr[0];
@@ -31,14 +37,13 @@ const getFiles = (rollback) => new Promise((resolve, reject) => {
     });
 });
 const run = (db, fn, version) => {
-    const { promise } = db.transaction(async (t) => {
+    const { promise } = db.wrapperTransaction(db, async (t) => {
         fn(t);
-        await db.sync();
+        await t.sync();
         const sql = db.reverse ?
             `DELETE FROM schema_migrations WHERE version = '${version}'` :
             `INSERT INTO schema_migrations VALUES ('${version}')`;
         t.exec(sql).catch(utils_1.noop);
-        t.commit();
     });
     return promise;
 };
@@ -71,7 +76,7 @@ const migrateOrRollback = async (rollback) => {
         const configs = await utils_1.getConfig();
         for (let env in configs) {
             const config = configs[env];
-            db = utils_1.adapter(config, schema_1.default, { reverse: rollback });
+            db = utils_1.adapter(config, migration_1.default, { reverse: rollback });
             await db.connect();
             let [files, versions] = (await Promise.all([getFiles(rollback), getMigratedVersions(db)]));
             versions = JSON.parse(versions);

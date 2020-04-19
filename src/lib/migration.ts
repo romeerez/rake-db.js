@@ -14,14 +14,14 @@ import {
   IndexOptions,
 } from '../types'
 
-const createTable = (db: Schema, name: string, fn?: TableCallback, options?: TableOptions) =>
+const createTable = (db: Migration, name: string, fn?: TableCallback, options?: TableOptions) =>
   new CreateTable(name, db.reverse, options).__commit(db, fn)
 
-const dropTable = (db: Schema, name: string) =>
+const dropTable = (db: Migration, name: string) =>
   db.exec(`DROP TABLE "${plural(name)}" CASCADE`).catch(noop)
 
 const createJoinTable = (
-  db: Schema,
+  db: Migration,
   tableOne: string,
   tableTwo: string,
   options?: JoinTableOptions | TableCallback,
@@ -46,13 +46,13 @@ const createJoinTable = (
 }
 
 const dropJoinTable = (
-  db: Schema, tableOne: string, tableTwo: string, options?: JoinTableOptions | TableCallback
+  db: Migration, tableOne: string, tableTwo: string, options?: JoinTableOptions | TableCallback
 ) => {
   const tableName = typeof options === 'object' ? options.tableName : undefined
   dropTable(db, tableName || join(...[tableOne, tableTwo].sort()))
 }
 
-export default class Schema extends Adapter {
+export default class Migration extends Adapter {
   reverse: boolean
 
   constructor({reverse, ...params}: AdapterProps & {reverse: boolean}) {
