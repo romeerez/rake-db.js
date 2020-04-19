@@ -60,18 +60,13 @@ const parseConfig = async () => {
 }
 
 const validateConfig = (config: DbConfig) => {
-  const noDatabase = []
   for (let env in config) {
-    if (!config[env].database) {
-      noDatabase.push(env)
+    if (!config[env].url && !config[env].database) {
+      throw new Error(
+        'Invalid database config:\n' +
+        `database option is required and not found in ${env} environment`
+      )
     }
-  }
-  if (noDatabase.length) {
-    throw new Error(
-      'Invalid database config:\n' +
-      'database option is required and not found in ' +
-      noDatabase.join(', ') + ' environments'
-    )
   }
 }
 
@@ -88,8 +83,12 @@ export const getConfig = async () => {
   return config
 }
 
-export const adapter = (config: DbConfig, Class = Adapter, params = {}) =>
-  new Class({ ...config, pool: 1, log: false, ...params })
+export const adapter = (config: DbConfig, Class = Adapter, params = {}) => {
+  if (config.url)
+    return Class.fromURL(config.url, {pool: 1, log: false, ...params})
+  else
+    return new Class({...config, pool: 1, log: false, ...params})
+}
 
 export const join = (...args: string[]) => {
   if (camelCase)

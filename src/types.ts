@@ -4,7 +4,10 @@ import Table from './lib/schema/table'
 export {Migration, Table}
 
 export interface DbConfig {
-  [key: string]: {database?: string}
+  [key: string]: {
+    url?: string,
+    database?: string
+  }
 }
 
 export interface TableOptions {

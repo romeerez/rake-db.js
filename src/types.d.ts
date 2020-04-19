@@ -3,6 +3,7 @@ import Table from './lib/schema/table';
 export { Migration, Table };
 export interface DbConfig {
     [key: string]: {
+        url?: string;
         database?: string;
     };
 }
