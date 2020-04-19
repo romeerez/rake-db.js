@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const pg_adapter_1 = require("pg-adapter");
-exports.dbConfigPath = () => process.env.DB_CONFIG_PATH;
+exports.DbConfigsPath = () => process.env.DB_CONFIG_PATH;
 exports.dbDirPath = () => process.env.DB_DIR_PATH || path_1.default.join(process.cwd(), 'db');
 exports.dbMigratePath = () => path_1.default.join(exports.dbDirPath(), 'migrate');
 const search = [
@@ -21,7 +21,7 @@ exports.readFile = (path) => new Promise((resolve, reject) => {
     });
 });
 const getConfigSource = () => {
-    const filePath = exports.dbConfigPath();
+    const filePath = exports.DbConfigsPath();
     if (filePath)
         return exports.readFile(filePath);
     return new Promise((resolve) => {

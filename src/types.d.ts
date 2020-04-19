@@ -2,10 +2,15 @@ import Migration from './lib/migration';
 import Table from './lib/schema/table';
 export { Migration, Table };
 export interface DbConfig {
-    [key: string]: {
-        url?: string;
-        database?: string;
-    };
+    url?: string;
+    database?: string;
+    host?: string;
+    port?: number | string;
+    user?: string;
+    password?: string;
+}
+export interface DbConfigs {
+    [key: string]: DbConfig;
 }
 export interface TableOptions {
     id?: boolean;

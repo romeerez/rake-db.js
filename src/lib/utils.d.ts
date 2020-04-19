@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { Adapter } from 'pg-adapter';
 import { DbConfig } from '../types';
-export declare const dbConfigPath: () => string | undefined;
+export declare const DbConfigsPath: () => string | undefined;
 export declare const dbDirPath: () => string;
 export declare const dbMigratePath: () => string;
 export declare const readFile: (path: string) => Promise<Buffer>;

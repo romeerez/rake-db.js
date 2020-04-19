@@ -14,7 +14,7 @@ const initConfig = `module.exports = {
 }
 `;
 const createConfig = () => {
-    const configPath = utils_1.dbConfigPath() || path_1.default.join(process.cwd(), 'database.js');
+    const configPath = utils_1.DbConfigsPath() || path_1.default.join(process.cwd(), 'database.js');
     fs_1.default.access(configPath, (err) => {
         if (err)
             fs_1.default.writeFile(configPath, initConfig, (err) => {

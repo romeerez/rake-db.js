@@ -2,9 +2,9 @@ import path from 'path'
 import fs from 'fs'
 import {Adapter, parseUrl} from 'pg-adapter'
 import ErrnoException = NodeJS.ErrnoException
-import {DbConfig} from '../types'
+import {DbConfigs, DbConfig} from '../types'
 
-export const dbConfigPath = () =>
+export const DbConfigsPath = () =>
   process.env.DB_CONFIG_PATH
 
 export const dbDirPath = () =>
@@ -26,7 +26,7 @@ export const readFile = (path: string) => <Promise<Buffer>>new Promise((resolve,
 })
 
 const getConfigSource = () => {
-  const filePath = dbConfigPath()
+  const filePath = DbConfigsPath()
   if (filePath)
     return readFile(filePath)
 
@@ -59,7 +59,7 @@ const parseConfig = async () => {
   }
 }
 
-const validateConfig = (config: DbConfig) => {
+const validateConfig = (config: DbConfigs) => {
   const invalidEnvs: string[] = []
   for (let env in config) {
     if (config[env].url || config[env].database)
