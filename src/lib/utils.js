@@ -49,12 +49,14 @@ const parseConfig = async () => {
     }
 };
 const validateConfig = (config) => {
+    const invalidEnvs = [];
     for (let env in config) {
-        if (!config[env].url && !config[env].database) {
-            throw new Error('Invalid database config:\n' +
-                `database option is required and not found in ${env} environment`);
-        }
+        if (config[env].url || config[env].database)
+            return;
+        invalidEnvs.push(env);
     }
+    throw new Error('Invalid database config:\n' +
+        `database option is required and not found in ${invalidEnvs.join(', ')} environments`);
 };
 let camelCase = true;
 exports.getConfig = async () => {
