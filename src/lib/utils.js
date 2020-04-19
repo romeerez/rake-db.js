@@ -10,8 +10,8 @@ exports.dbConfigPath = () => process.env.DB_CONFIG_PATH;
 exports.dbDirPath = () => process.env.DB_DIR_PATH || path_1.default.join(process.cwd(), 'db');
 exports.dbMigratePath = () => path_1.default.join(exports.dbDirPath(), 'migrate');
 const search = [
-    'database.json',
-    path_1.default.join('config', 'database.json'),
+    'database.js',
+    path_1.default.join('config', 'database.js'),
 ];
 exports.readFile = (path) => new Promise((resolve, reject) => {
     fs_1.default.readFile(path, (err, content) => {
@@ -37,12 +37,12 @@ const getConfigSource = () => {
     });
 };
 const parseConfig = async () => {
-    const json = await getConfigSource();
-    if (!json)
+    const js = await getConfigSource();
+    if (!js)
         throw new Error('Database config not found, expected to find it somewhere here:\n' +
             search.join('\n'));
     try {
-        return JSON.parse(json.toString());
+        return eval(js.toString());
     }
     catch (err) {
         throw new Error(`Failed to parse database config: ${err.message}`);

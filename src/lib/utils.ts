@@ -14,8 +14,8 @@ export const dbMigratePath = () =>
   path.join(dbDirPath(), 'migrate')
 
 const search = [
-  'database.json',
-  path.join('config', 'database.json'),
+  'database.js',
+  path.join('config', 'database.js'),
 ]
 
 export const readFile = (path: string) => <Promise<Buffer>>new Promise((resolve, reject) => {
@@ -45,15 +45,15 @@ const getConfigSource = () => {
 }
 
 const parseConfig = async () => {
-  const json: Buffer = await getConfigSource()
-  if (!json)
+  const js: Buffer = await getConfigSource()
+  if (!js)
     throw new Error(
       'Database config not found, expected to find it somewhere here:\n' +
       search.join('\n')
     )
 
   try {
-    return JSON.parse(json.toString())
+    return eval(js.toString())
   } catch (err) {
     throw new Error(`Failed to parse database config: ${err.message}`)
   }

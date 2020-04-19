@@ -6,14 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const utils_1 = require("./utils");
-const initConfig = `{
-  "development": {
-    
+const initConfig = `module.exports = {
+  development: {
+    database: 'dbname'
   },
-  "camelCase": true
-}`;
+  camelCase: true
+}
+`;
 const createConfig = () => {
-    const configPath = utils_1.dbConfigPath() || path_1.default.join(process.cwd(), 'database.json');
+    const configPath = utils_1.dbConfigPath() || path_1.default.join(process.cwd(), 'database.js');
     fs_1.default.access(configPath, (err) => {
         if (err)
             fs_1.default.writeFile(configPath, initConfig, (err) => {

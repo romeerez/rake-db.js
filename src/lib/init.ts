@@ -3,15 +3,16 @@ import path from 'path'
 import {dbConfigPath, dbDirPath, dbMigratePath} from './utils'
 
 const initConfig =
-`{
-  "development": {
-    
+`module.exports = {
+  development: {
+    database: 'dbname'
   },
-  "camelCase": true
-}`
+  camelCase: true
+}
+`
 
 const createConfig = () => {
-  const configPath = dbConfigPath() || path.join(process.cwd(), 'database.json')
+  const configPath = dbConfigPath() || path.join(process.cwd(), 'database.js')
   fs.access(configPath, (err) => {
     if (err)
       fs.writeFile(configPath, initConfig, (err) => {

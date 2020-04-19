@@ -7,21 +7,21 @@ DATABASE_URL must have format postgres://user:password@host:port/database
 
 Config file for databases could be found in:
 - DB_CONFIG_PATH env variable (absolute path)
-- current_dir/database.json
-- current_dir/config/database.json
+- current_dir/database.js
+- current_dir/config/database.js
 
 Config file should look like:
 (environments keys and amount doesn't matter)
-{
-  "development": {
-    "user": ...,
-    "password": ...,
-    "database": ...,
+module.exports = {
+  development: {
+    user: ...,
+    password: ...,
+    database: ...,
     ...other connection options
   },
-  "test": { same as above },
-  "production": { same as above },
-  "camelCase": true // by default
+  test: { same as above },
+  production: { same as above },
+  camelCase: true // by default
 }
 
 Migration files will be generated into:
@@ -29,7 +29,7 @@ Migration files will be generated into:
 - current_dir/db/migrate
 
 Commands:
-  init                    create empty directories and database.json
+  init                    create empty directories and database.js
   create                  create all databases
   create-versions-table   fox existing empty database
   drop                    drop all databases
