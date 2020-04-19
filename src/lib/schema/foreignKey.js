@@ -1,117 +1,64 @@
-const {plural, singular} = require('pluralize')
-const {join} = require('../utils')
-
-const changeIndex = (table, addIndex, name, index, polymorphic) => {
-  if (index === true)
-    index = {}
-  if (polymorphic) {
-    if (!index.name) index.name = join(table, name, 'index')
-    addIndex([join(name, 'id'), join(name, 'type')], index)
-  } else {
-    addIndex(join(name, 'id'), index)
-  }
-}
-
-const mapAction = {
-  noAction: 'NO ACTION',
-  restrict: 'RESTRICT',
-  cascade: 'CASCADE',
-  setNull: 'SET NULL',
-  nullify: 'SET NULL',
-  setDefault: 'SET DEFAULT',
-}
-
-const references = ({toTable, primaryKey = 'id', onDelete, onUpdate}) => {
-  const sql = []
-  sql.push(
-    'REFERENCES',
-    `"${toTable}"`,
-    `("${primaryKey}")`
-  )
-  if (onDelete) {
-    const value = mapAction[onDelete]
-    if (value)
-      sql.push('ON DELETE', value)
-  }
-  if (onUpdate) {
-    const value = mapAction[onUpdate]
-    if (value)
-      sql.push('ON UPDATE', value)
-  }
-  return sql.join(' ')
-}
-
-
-exports.references = references
-
-exports.reference = (table, column, addIndex, name, {polymorphic, type = 'integer', ...options} = {}) => {
-  table = plural(table)
-  name = singular(name)
-
-  if (options.foreignKey === true)
-    options = {...options, foreignKey: {}}
-  if (typeof options.foreignKey === 'string')
-    options = {...options, foreignKey: {column: options.foreignKey}}
-  if (typeof options.foreignKey === 'object')
-    if (!options.foreignKey.toTable)
-      options = {...options, foreignKey: {...options.foreignKey, toTable: plural(name)}}
-
-  if (polymorphic) {
-    const {foreignKey, ...withoutForeignKey} = options
-    options = withoutForeignKey
-  }
-
-  let {index, ...withoutIndexOptions} = options
-
-  column(join(name, 'id'), type, withoutIndexOptions)
-  if (polymorphic) {
-    const {index, ...typeOptions} = withoutIndexOptions
-    column(join(name, 'type'), 'text', typeOptions)
-  }
-
-  if (index)
-    changeIndex(table, addIndex, name, index, polymorphic)
-}
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const pluralize_1 = require("pluralize");
+const utils_1 = require("../utils");
+const types_1 = require("../../types");
+const changeIndex = (table, addIndex, name, index) => {
+    if (index === true)
+        index = {};
+    addIndex(utils_1.join(name, 'id'), index);
+};
+exports.references = ({ toTable, primaryKey = 'id', onDelete, onUpdate }) => {
+    const sql = [];
+    sql.push('REFERENCES', `"${toTable}"`, `("${primaryKey}")`);
+    if (onDelete) {
+        const value = types_1.IndexOnCallback[onDelete];
+        if (value)
+            sql.push('ON DELETE', value);
+    }
+    if (onUpdate) {
+        const value = types_1.IndexOnCallback[onUpdate];
+        if (value)
+            sql.push('ON UPDATE', value);
+    }
+    return sql.join(' ');
+};
+exports.reference = (table, column, addIndex, name, { type = 'integer', ...options } = {}) => {
+    table = pluralize_1.plural(table);
+    name = pluralize_1.singular(name);
+    if (options.foreignKey === true)
+        options = { ...options, foreignKey: {} };
+    if (typeof options.foreignKey === 'string')
+        options = { ...options, foreignKey: { column: options.foreignKey } };
+    if (typeof options.foreignKey === 'object')
+        if (!options.foreignKey.toTable)
+            options = { ...options, foreignKey: { ...options.foreignKey, toTable: pluralize_1.plural(name) } };
+    if (typeof options !== 'object')
+        throw new Error(`Unexpected reference options: ${JSON.stringify(options)}`);
+    let { index, ...withoutIndexOptions } = options;
+    column(utils_1.join(name, 'id'), type, withoutIndexOptions);
+    if (index)
+        changeIndex(table, addIndex, name, index);
+};
 const getConstraintName = (table, foreignKey, options) => {
-  if (options.name)
-    return options.name
-  if (options.polymorphic)
-    return [join(table, foreignKey[0], 'fkey'), join(table, foreignKey[1], 'fkey')]
-  else
-    return join(table, foreignKey, 'fkey')
-}
-
+    if (options.name)
+        return options.name;
+    return utils_1.join(table, foreignKey, 'fkey');
+};
 exports.addForeignKey = (table, constraint, addIndex, name, options = {}) => {
-  table = plural(table)
-  name = singular(name)
-
-  if (options.polymorphic) {
+    table = pluralize_1.plural(table);
+    name = pluralize_1.singular(name);
     options = {
-      toTable: plural(name),
-      ...options
-    }
-    const {foreignKey = [join(name, 'id'), join(name, 'type')]} = options
-    const {primaryKey = ['id', 'type']} = options
-    const constraintName = getConstraintName(table, foreignKey, options)
-
-    let sql = `FOREIGN KEY ("${foreignKey[0]}") ${references({...options, primaryKey: primaryKey[0]})}`
-    constraint(constraintName[0], sql)
-
-    sql = `FOREIGN KEY ("${foreignKey[1]}") ${references({...options, primaryKey: primaryKey[1]})}`
-    constraint(constraintName[1], sql)
-  } else {
-    options = {
-      toTable: plural(name),
-      primaryKey: `id`,
-      ...options
-    }
-
-    const {foreignKey = join(name, 'id')} = options
-    const sql = `FOREIGN KEY ("${foreignKey}") ${references(options)}`
-    constraint(getConstraintName(table, foreignKey, options), sql)
-  }
-
-  if (options.index)
-    changeIndex(table, addIndex, name, options.index, options.polymorphic)
-}
+        toTable: pluralize_1.plural(name),
+        primaryKey: `id`,
+        ...options
+    };
+    let foreignKey = options.foreignKey;
+    if (!foreignKey)
+        foreignKey = utils_1.join(name, 'id');
+    const sql = `FOREIGN KEY ("${foreignKey}") ${exports.references(options)}`;
+    const constraintName = getConstraintName(table, foreignKey, options);
+    constraint(constraintName, sql);
+    if (options.index)
+        changeIndex(table, addIndex, name, options.index);
+};

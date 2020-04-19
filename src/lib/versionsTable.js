@@ -1,20 +1,22 @@
-const {getConfig, adapter} = require('./utils')
-
-schemaMigrationsSQL = 'CREATE TABLE schema_migrations ( version TEXT NOT NULL )'
-
-const createForConfig = async (config) => {
-  const db = adapter(config)
-  await db.exec(schemaMigrationsSQL)
-  db.close()
-}
-
-exports.createForConfig = createForConfig
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const utils_1 = require("./utils");
+const schemaMigrationsSQL = 'CREATE TABLE schema_migrations ( version TEXT NOT NULL )';
+exports.createForConfig = async (config) => {
+    const db = utils_1.adapter(config);
+    await db.exec(schemaMigrationsSQL);
+    db.close();
+};
 exports.create = async () => {
-  let config
-  try { config = await getConfig() } catch (err) { return }
-  for (let env in config) {
-    const envConfig = config[env]
-    createForConfig(envConfig)
-  }
-}
+    let config;
+    try {
+        config = await utils_1.getConfig();
+    }
+    catch (err) {
+        return;
+    }
+    for (let env in config) {
+        const envConfig = config[env];
+        exports.createForConfig(envConfig);
+    }
+};

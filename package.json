@@ -5,6 +5,7 @@
   "bin": {
     "rake-db": "src/rake-db.js"
   },
+  "types": "src/types.d.ts",
   "repository": "https://gitlab.com/romikus/rake-db.js",
   "author": "Roman Kushyn",
   "license": "MIT",
@@ -19,18 +20,13 @@
     "scripts": "./src/scripts.js"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "@types/jest": "^25.2.1",
+    "@types/node": "^13.11.1",
+    "@types/pluralize": "^0.0.29",
     "jest": "^25.1.0"
   },
   "dependencies": {
-    "pg-adapter": "^1.1.12",
+    "pg-adapter": "^1.1.25",
     "pluralize": "^8.0.0"
-  },
-  "babel": {
-    "plugins": [
-      "transform-es2015-modules-commonjs",
-      "@babel/plugin-proposal-class-properties"
-    ]
   }
 }

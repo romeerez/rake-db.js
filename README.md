@@ -3,14 +3,12 @@
 This is a migration tool which will be appreciated by people who get used to Ruby on Rails migrations.
 
 It can create, drop, migrate and rollback database, it can generate migrations.
-Currently that's all.
 
-Also currently only postgres is supported.
-
-Supporting other databases, schema file, plenty of features that `rake db` has requires contributions,
-this library contain only basic minimum mentioned above.
+Only postgres is supported.
 
 By default column, index and foreign keys names are generated in camelCase, which is configurable in `database.json`
+
+Written in typescript.
 
 ## CLI
 
@@ -96,8 +94,8 @@ rake-db g create_entities name:text
 ```
 
 It will create such migration file:
-```js
-exports.change = (db, up) => {
+```typescript
+export const change = (db, up) => {
   db.createTable('entities', (t) => {
     t.text('name')
     t.timestamps()
@@ -110,8 +108,8 @@ it means you can make queries.
 
 Second argument `up` is boolean which is true for migrate and `false` for rollback.
 
-```js
-exports.change = (db, up) => {
+```typescript
+export const change = (db, up) => {
   db.createTable('entities', (t) => {
     t.text('name')
     t.timestamps()
@@ -135,12 +133,12 @@ table will not be created, you can fix error and run again.
 
 ## Migration directions
 
-You can define `exports.up` for migrate, `exports.down` for rollback or `exports.change` for both.
+You can define `export const up` for migrate, `export const down` for rollback or `export const change` for both.
 
 ## All methods and options
 
 ```js
-exports.change = (db, up) => {
+export const change = (db, up) => {
   // createTable will drop it on rollback
   db.createTable('table_name') // create table with single id column
   db.createTable('table_name', {id: false}) // don't create id column
@@ -178,7 +176,6 @@ exports.change = (db, up) => {
     // - unique index including two columns
     // - foreignKey will be just ignored, it can't work here
     t.reference('table', {
-      polymorphic: true,
       index: {unique: true},
       foreignKey: true
     })
@@ -206,9 +203,7 @@ exports.change = (db, up) => {
     // adds FOREIGN KEY for already defined column
     t.foreignKey('table', {
       primaryKey: 'id', // column related table, id is default
-      primaryKey: ['id', 'type'], // for polymorphic
       foreignKey: 'table_id', // column in current table, [table]_id is default
-      foreignKey: ['table_id', 'table_type'], // for polymorphic foreign key
       toTable: 'related_table_name', // for example, define author_id foreign key for table users
       index: true || {...options} // create index
     })
@@ -217,7 +212,6 @@ exports.change = (db, up) => {
     t.index(['column1', 'column2', 'column3']) // create index for multiple columns
     t.index('here_are_options', {
       unique: true, // UNIQUE constraint
-      polymorphic: true, // will create index for (table_id, table_name) columns
       length: 20, // argument of column: CREATE INDEX ... ON table (column(20))
       order: 'asc' || 'desc', // order of index: CREATE INDEX ... ON table (column ASC)
       including: 'column' || ['column1', 'column2'], // allows to include columns for performance

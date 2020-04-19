@@ -1,6 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = () => console.log(`Usage: rake-db [command] [arguments]
+export default () => console.log(
+`Usage: rake-db [command] [arguments]
 
 DATABASE_URL env variable should be provided or a config file
 
@@ -49,4 +48,4 @@ Generate arguments: (no camel case here for better readability)
 
 - other arguments considered as columns with types:
   create_table name:text createdAt:date
-`);
+`)

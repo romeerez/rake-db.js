@@ -1,0 +1,36 @@
+import { Schema, ColumnFunction, ColumnOptions, ForeignKeyOptions, IndexOptions, ReferenceOptions, TableOptions } from '../../types';
+export default class Table {
+    tableName: string;
+    reverse: boolean;
+    options: TableOptions;
+    lines: string[];
+    indices: [boolean, string, undefined | true | IndexOptions][];
+    comments: [string, string][];
+    addColumnSql: (sql: string) => void;
+    constraint: (name: string, sql?: string) => void;
+    constructor(tableName: string, reverse: boolean, options?: TableOptions);
+    execute(sql: string): void;
+    column: ColumnFunction;
+    index: (name: string, options?: true | IndexOptions | undefined) => void;
+    timestamps: (options?: ColumnOptions | undefined) => void;
+    reference: (name: string, options?: ReferenceOptions | undefined) => void;
+    belongsTo: (name: string, options?: ReferenceOptions | undefined) => void;
+    foreignKey: (name: string, options?: ForeignKeyOptions | undefined) => void;
+    addComments: (db: Schema) => void;
+    bigint(name: string, options?: ColumnOptions): void;
+    bigserial(name: string, options?: ColumnOptions): void;
+    boolean(name: string, options?: ColumnOptions): void;
+    date(name: string, options?: ColumnOptions): void;
+    decimal(name: string, options?: ColumnOptions): void;
+    float(name: string, options?: ColumnOptions): void;
+    integer(name: string, options?: ColumnOptions): void;
+    text(name: string, options?: ColumnOptions): void;
+    smallint(name: string, options?: ColumnOptions): void;
+    smallserial(name: string, options?: ColumnOptions): void;
+    string(name: string, options?: ColumnOptions): void;
+    time(name: string, options?: ColumnOptions): void;
+    timestamp(name: string, options?: ColumnOptions): void;
+    timestamptz(name: string, options?: ColumnOptions): void;
+    binary(name: string, options?: ColumnOptions): void;
+    serial(name: string, options?: ColumnOptions): void;
+}
