@@ -36,17 +36,16 @@ const getFiles = (rollback) => new Promise((resolve, reject) => {
         resolve(files);
     });
 });
-const run = (db, fn, version) => {
-    const { promise } = db.wrapperTransaction(db, async (t) => {
-        fn(t);
-        await t.sync();
-        const sql = db.reverse ?
-            `DELETE FROM schema_migrations WHERE version = '${version}'` :
-            `INSERT INTO schema_migrations VALUES ('${version}')`;
-        t.exec(sql).catch(utils_1.noop);
-    });
-    return promise;
-};
+const run = (db, fn, version) => db.wrapperTransaction(db, async (t) => {
+    fn(t);
+    await t.sync();
+    if (t.failed)
+        return;
+    const sql = db.reverse ?
+        `DELETE FROM schema_migrations WHERE version = '${version}'` :
+        `INSERT INTO schema_migrations VALUES ('${version}')`;
+    t.exec(sql).catch(utils_1.noop);
+});
 const migrateFile = async (db, version, file) => {
     const filePath = path_1.default.resolve(utils_1.dbMigratePath(), file);
     const migration = require(filePath);

@@ -38,10 +38,12 @@ const getFiles = (rollback: boolean) => new Promise((resolve, reject) => {
   })
 })
 
-const run = (db: Migration, fn: (t: Migration) => any, version: string) => {
-  const {promise} = db.wrapperTransaction(db, async (t: Migration & Transaction) => {
+const run = (db: Migration, fn: (t: Migration) => any, version: string) =>
+  db.wrapperTransaction(db, async (t: Migration & Transaction) => {
     fn(t)
     await t.sync()
+    if (t.failed)
+      return
     const sql =
       db.reverse ?
         `DELETE FROM schema_migrations WHERE version = '${version}'` :
@@ -49,8 +51,6 @@ const run = (db: Migration, fn: (t: Migration) => any, version: string) => {
 
     t.exec(sql).catch(noop)
   })
-  return promise
-}
 
 const migrateFile = async (db: Migration, version: string, file: string) => {
   const filePath = path.resolve(dbMigratePath(), file)

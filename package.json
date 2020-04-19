@@ -26,7 +26,7 @@
     "jest": "^25.1.0"
   },
   "dependencies": {
-    "pg-adapter": "latest",
+    "pg-adapter": "^1.1.32",
     "pluralize": "^8.0.0"
   }
 }
