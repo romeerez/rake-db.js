@@ -23,11 +23,7 @@ const execCreateOrDrop = (utility: string, config: DbConfig, callback?: Callback
 
 const createOrDrop = async (utility: string, callback?: CallbackType) => {
   let config
-  try {
-    config = await getConfig()
-  } catch (err) {
-    return
-  }
+  config = await getConfig()
   for (let env in config)
     execCreateOrDrop(utility, config[env], callback)
 }
