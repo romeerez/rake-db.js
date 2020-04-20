@@ -282,6 +282,12 @@ test('schema dropTable', async () => {
     "id" serial PRIMARY KEY
   )`));
 });
+test('schema renameTable', async () => {
+    await db.renameTable('apple', 'banana');
+    expect(trim(sql.next())).toBe('ALTER TABLE "apples" RENAME TO "bananas"');
+    await reverse.renameTable('apple', 'banana');
+    expect(trim(sql.next())).toBe('ALTER TABLE "bananas" RENAME TO "apples"');
+});
 test('schema change methods', async () => {
     await db.addBelongsTo('banana', 'monkeys');
     expect(toLine(sql.next())).toBe('ALTER TABLE "bananas" ADD COLUMN "monkeyId" integer');

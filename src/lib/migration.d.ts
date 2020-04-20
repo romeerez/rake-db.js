@@ -9,6 +9,7 @@ export default class Migration extends Adapter {
     createTable(name: string, options?: TableOptions | TableCallback, fn?: TableCallback): void | Promise<unknown>;
     changeTable(name: string, options?: TableOptions | ChangeTableCallback, fn?: ChangeTableCallback): void;
     dropTable(name: string, options?: TableOptions | TableCallback, fn?: TableCallback): void | Promise<unknown>;
+    renameTable(from: string, to: string): void;
     addBelongsTo(table: string, name: string, options?: ReferenceOptions): void;
     addColumn(table: string, name: string, type: string, options?: ColumnOptions): void;
     addForeignKey(table: string, name: string, options?: ForeignKeyOptions): void;

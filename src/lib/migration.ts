@@ -20,6 +20,9 @@ const createTable = (db: Migration, name: string, fn?: TableCallback, options?: 
 const dropTable = (db: Migration, name: string) =>
   db.exec(`DROP TABLE "${plural(name)}" CASCADE`).catch(noop)
 
+const renameTable = (db: Migration, from: string, to: string) =>
+  db.exec(`ALTER TABLE "${plural(from)}" RENAME TO "${plural(to)}"`)
+
 const createJoinTable = (
   db: Migration,
   tableOne: string,
@@ -91,6 +94,14 @@ export default class Migration extends Adapter {
 
     return dropTable(this, name)
   }
+
+  renameTable(from: string, to: string) {
+    if (this.reverse)
+      renameTable(this, to, from)
+    else
+      renameTable(this, from, to)
+  }
+
 
   addBelongsTo(table: string, name: string, options?: ReferenceOptions) {
     this.changeTable(table, (t) => t.belongsTo(name, options))

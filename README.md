@@ -268,6 +268,8 @@ export const change = (db: Migration, up: boolean) => {
     // definition of table
   })
   
+  db.renameTable('current_name', 'new_name')
+  
   // for join table:
   db.dropJoinTable('first_table', 'second_table', options, (t) => {})
   

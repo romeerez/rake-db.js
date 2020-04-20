@@ -7,6 +7,7 @@ const pluralize_1 = require("pluralize");
 const utils_1 = require("./utils");
 const createTable = (db, name, fn, options) => new createTable_1.CreateTable(name, db.reverse, options).__commit(db, fn);
 const dropTable = (db, name) => db.exec(`DROP TABLE "${pluralize_1.plural(name)}" CASCADE`).catch(utils_1.noop);
+const renameTable = (db, from, to) => db.exec(`ALTER TABLE "${pluralize_1.plural(from)}" RENAME TO "${pluralize_1.plural(to)}"`);
 const createJoinTable = (db, tableOne, tableTwo, options, cb) => {
     let tableName;
     let columnOptions;
@@ -57,6 +58,12 @@ class Migration extends pg_adapter_1.Adapter {
                 return new createTable_1.CreateTable(name, this.reverse, options).__commit(this, fn);
         }
         return dropTable(this, name);
+    }
+    renameTable(from, to) {
+        if (this.reverse)
+            renameTable(this, to, from);
+        else
+            renameTable(this, from, to);
     }
     addBelongsTo(table, name, options) {
         this.changeTable(table, (t) => t.belongsTo(name, options));
