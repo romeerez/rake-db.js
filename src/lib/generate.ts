@@ -15,7 +15,7 @@ const migrateDirPath = async () => {
 }
 
 const generateFileContent = (name: string, args: string[]) => {
-  const lines = ['exports.change = (db, up) => {']
+  const lines = ["import {Migration} from 'rake-db'\n\nexport const change = (db: Migration, up: boolean) => {"]
 
   let command: string | undefined = undefined
   if (name.startsWith('create_'))
@@ -74,7 +74,7 @@ const createMigrationFile = (name: string, content: string, dirPath: string) => 
     now.getUTCMinutes(),
     now.getUTCSeconds(),
   ].map(value => value < 10 ? `0${value}` : value).join('')
-  fs.writeFileSync(path.join(dirPath, `${prefix}_${name}.js`), content)
+  fs.writeFileSync(path.join(dirPath, `${prefix}_${name}.ts`), content)
 }
 
 export const generate = async (args: string[]) => {
