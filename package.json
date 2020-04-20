@@ -5,6 +5,7 @@
   "bin": {
     "rake-db": "src/rake-db.js"
   },
+  "main": "src/types.js",
   "types": "src/types.d.ts",
   "repository": "https://gitlab.com/romikus/rake-db.js",
   "author": "Roman Kushyn",
