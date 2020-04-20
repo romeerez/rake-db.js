@@ -95,7 +95,9 @@ rake-db g create_entities name:text
 
 It will create such migration file:
 ```typescript
-export const change = (db, up) => {
+import {Migration} from 'rake-db'
+
+export const change = (db: Migration, up: boolean) => {
   db.createTable('entities', (t) => {
     t.text('name')
     t.timestamps()
@@ -109,7 +111,9 @@ it means you can make queries.
 Second argument `up` is boolean which is true for migrate and `false` for rollback.
 
 ```typescript
-export const change = (db, up) => {
+import {Migration} from 'rake-db'
+
+export const change = (db: Migration, up: boolean) => {
   db.createTable('entities', (t) => {
     t.text('name')
     t.timestamps()
@@ -138,7 +142,9 @@ You can define `export const up` for migrate, `export const down` for rollback o
 ## All methods and options
 
 ```js
-export const change = (db, up) => {
+import {Migration} from 'rake-db'
+
+export const change = (db: Migration, up: boolean) => {
   // createTable will drop it on rollback
   db.createTable('table_name') // create table with single id column
   db.createTable('table_name', {id: false}) // don't create id column
