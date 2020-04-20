@@ -1,6 +1,6 @@
 {
   "name": "rake-db",
-  "version": "1.1.22",
+  "version": "1.1.23",
   "description": "Postgresql migrations like in Ruby on Rails",
   "bin": {
     "rake-db": "src/rake-db.js"
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@types/pluralize": "^0.0.29",
-    "pg-adapter": "^1.1.32",
+    "pg-adapter": "latest",
     "pluralize": "^8.0.0"
   }
 }
