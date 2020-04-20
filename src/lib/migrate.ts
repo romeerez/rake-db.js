@@ -3,17 +3,31 @@ import path from 'path'
 import {getConfig, adapter, dbMigratePath, noop} from './utils'
 import Migration from './migration'
 import {Transaction} from 'pg-adapter'
+import {createSchemaMigrations} from './versionsTable'
 
 type MigrationFile = {
   version: string,
   path: string,
 }
 
-const getMigratedVersions = (db: Migration) =>
+const getMigratedVersionsQuery = (db: Migration) =>
   db.value(
     `SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
     `FROM schema_migrations`
   )
+
+const getMigratedVersions = async (db: Migration) => {
+  try {
+    return await getMigratedVersionsQuery(db)
+  } catch (err) {
+    if (err.message === 'relation "schema_migrations" does not exist') {
+      await createSchemaMigrations(db)
+      return await getMigratedVersionsQuery(db)
+    } else {
+      throw err
+    }
+  }
+}
 
 const getFiles = (rollback: boolean) => new Promise((resolve, reject) => {
   fs.readdir(dbMigratePath(), (err, allFiles) => {

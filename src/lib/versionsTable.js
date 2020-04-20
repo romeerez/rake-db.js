@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
 const schemaMigrationsSQL = 'CREATE TABLE schema_migrations ( version TEXT NOT NULL )';
+exports.createSchemaMigrations = (db) => db.exec(schemaMigrationsSQL);
 exports.createForConfig = async (config) => {
     const db = utils_1.adapter(config);
     await db.exec(schemaMigrationsSQL);

@@ -63,16 +63,19 @@ const validateConfig = (config) => {
         `database option is required and not found in ${invalidEnvs.join(', ')} environments`);
 };
 let camelCase = true;
+let cacheConfig = undefined;
 exports.getConfig = async () => {
-    let config;
-    const url = process.env.DATABASE_URL;
-    config = url ? { default: pg_adapter_1.parseUrl(url) } : await parseConfig();
-    if ('camelCase' in config) {
-        camelCase = config.camelCase;
-        delete config.camelCase;
+    if (!cacheConfig) {
+        let config;
+        const url = process.env.DATABASE_URL;
+        config = url ? { default: pg_adapter_1.parseUrl(url) } : await parseConfig();
+        if ('camelCase' in config) {
+            camelCase = config.camelCase;
+            delete config.camelCase;
+        }
+        cacheConfig = validateConfig(config);
     }
-    config = validateConfig(config);
-    return config;
+    return cacheConfig;
 };
 exports.adapter = (config, Class = pg_adapter_1.Adapter, params = {}) => {
     if (config.url)

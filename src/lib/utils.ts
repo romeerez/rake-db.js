@@ -77,16 +77,19 @@ const validateConfig = (config: DbConfigs) => {
 }
 
 let camelCase = true
+let cacheConfig: undefined | DbConfigs = undefined
 export const getConfig = async () => {
-  let config
-  const url = process.env.DATABASE_URL
-  config = url ? {default: parseUrl(url)} : await parseConfig()
-  if ('camelCase' in config) {
-    camelCase = config.camelCase
-    delete config.camelCase
+  if (!cacheConfig) {
+    let config
+    const url = process.env.DATABASE_URL
+    config = url ? {default: parseUrl(url)} : await parseConfig()
+    if ('camelCase' in config) {
+      camelCase = config.camelCase
+      delete config.camelCase
+    }
+    cacheConfig = validateConfig(config)
   }
-  config = validateConfig(config)
-  return config
+  return cacheConfig
 }
 
 export const adapter = (config: DbConfig, Class = Adapter, params = {}) => {

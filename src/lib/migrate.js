@@ -7,8 +7,23 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const utils_1 = require("./utils");
 const migration_1 = __importDefault(require("./migration"));
-const getMigratedVersions = (db) => db.value(`SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
+const versionsTable_1 = require("./versionsTable");
+const getMigratedVersionsQuery = (db) => db.value(`SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
     `FROM schema_migrations`);
+const getMigratedVersions = async (db) => {
+    try {
+        return await getMigratedVersionsQuery(db);
+    }
+    catch (err) {
+        if (err.message === 'relation "schema_migrations" does not exist') {
+            await versionsTable_1.createSchemaMigrations(db);
+            return await getMigratedVersionsQuery(db);
+        }
+        else {
+            throw err;
+        }
+    }
+};
 const getFiles = (rollback) => new Promise((resolve, reject) => {
     fs_1.default.readdir(utils_1.dbMigratePath(), (err, allFiles) => {
         if (err)
