@@ -78,8 +78,8 @@ Migrationg files are generated into `db/migrate` directory:
 ```
 db/
   migrate/
-    20200216005003_create_table.js
-    20200223142823_change_table.js
+    20200216005003_create_table.ts
+    20200223142823_change_table.ts
 ```
 
 After `rake-db migrate` that table `schema_migrations` will contain two versions,
