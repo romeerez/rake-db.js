@@ -52,7 +52,7 @@ const getFiles = (rollback) => new Promise((resolve, reject) => {
     });
 });
 const run = (db, fn, version) => db.wrapperTransaction(db, async (t) => {
-    fn(t);
+    fn(t, !db.reverse);
     await t.sync();
     if (t.failed)
         return;

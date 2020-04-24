@@ -52,9 +52,9 @@ const getFiles = (rollback: boolean) => new Promise((resolve, reject) => {
   })
 })
 
-const run = (db: Migration, fn: (t: Migration) => any, version: string) =>
+const run = (db: Migration, fn: (t: Migration, up: boolean) => any, version: string) =>
   db.wrapperTransaction(db, async (t: Migration & Transaction) => {
-    fn(t)
+    fn(t, !db.reverse)
     await t.sync()
     if (t.failed)
       return
