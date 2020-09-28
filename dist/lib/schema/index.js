@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.removeIndex = exports.addIndex = void 0;
 const utils_1 = require("../utils");
 const getIndexName = (table, name, options = {}) => options !== true && options.name || utils_1.join(table, Array.isArray(name) ? name[0] : name, 'index');
 exports.addIndex = (table, name, options = {}) => {

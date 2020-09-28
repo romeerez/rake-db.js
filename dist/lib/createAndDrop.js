@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.dropDb = exports.createDb = void 0;
 const child_process_1 = require("child_process");
 const utils_1 = require("./utils");
 const versionsTable_1 = require("./versionsTable");

@@ -1,13 +1,17 @@
-import fs from 'fs'
-import path from 'path'
+import * as fs from 'fs'
+import * as path from 'path'
 import {DbConfigsPath, dbDirPath, dbMigratePath} from './utils'
 
 const initConfig =
 `module.exports = {
   development: {
-    database: 'dbname'
+    database: 'dbname',
+    user: '${process.env.USER || 'postgres'}',
+    password: '',
+    host: 'localhost',
+    port: '5432',
   },
-  camelCase: true
+  camelCase: true,
 }
 `
 

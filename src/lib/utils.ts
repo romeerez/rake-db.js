@@ -1,8 +1,9 @@
-import path from 'path'
-import fs from 'fs'
+import * as path from 'path'
+import * as fs from 'fs'
 import {Adapter, parseUrl} from 'pg-adapter'
 import ErrnoException = NodeJS.ErrnoException
 import {DbConfigs, DbConfig} from '../types'
+import { config as dotenvConfig } from 'dotenv'
 
 export const DbConfigsPath = () =>
   process.env.DB_CONFIG_PATH
@@ -47,15 +48,17 @@ const getConfigSource = () => {
 const parseConfig = async () => {
   const js: Buffer = await getConfigSource()
   if (!js)
-    throw new Error(
-      'Database config not found, expected to find it somewhere here:\n' +
+    throwError(
+      'Database config is not found!\n' +
+      'Please specify env variable DATABASE_URL=postgres://user:password@host:port/database in .env file or in command\n' +
+      'or put config to one of the files:\n' +
       search.join('\n')
     )
 
   try {
     return eval(js.toString())
   } catch (err) {
-    throw new Error(`Failed to parse database config: ${err.message}`)
+    throwError(`Failed to parse database config: ${err.message}`)
   }
 }
 
@@ -70,10 +73,15 @@ const validateConfig = (config: DbConfigs) => {
   }
   if (Object.keys(validConfigs).length !== 0)
     return validConfigs
-  throw new Error(
+  throwError(
     'Invalid database config:\n' +
     `database option is required and not found in ${invalidEnvs.join(', ')} environments`
   )
+}
+
+const getDatabaseUrlFromDotEnv = () => {
+  const { parsed } = dotenvConfig()
+  return parsed && parsed.DATABASE_URL
 }
 
 let camelCase = true
@@ -81,8 +89,8 @@ let cacheConfig: undefined | DbConfigs = undefined
 export const getConfig = async () => {
   if (!cacheConfig) {
     let config
-    const url = process.env.DATABASE_URL
-    config = url ? {default: parseUrl(url)} : await parseConfig()
+    const url = process.env.DATABASE_URL || getDatabaseUrlFromDotEnv()
+    config = url && { default: parseUrl(url) } || await parseConfig()
     if ('camelCase' in config) {
       camelCase = config.camelCase
       delete config.camelCase
@@ -112,3 +120,8 @@ export const join = (...args: string[]) => {
 }
 
 export const noop = () => {}
+
+export const throwError = (message: string) => {
+  console.error(message)
+  process.exit(1)
+}

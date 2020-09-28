@@ -6,7 +6,7 @@ if (!firstArg)
     firstArg = 'help';
 const commandArray = firstArg.split(':');
 const command = commandArray[0];
-if (command === 'init.ts')
+if (command === 'init')
     require('./lib/init').default();
 else if (command === 'create')
     require('./lib/createAndDrop').createDb(args);

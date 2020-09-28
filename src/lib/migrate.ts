@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import {getConfig, adapter, dbMigratePath, noop} from './utils'
+import * as fs from 'fs'
+import * as path from 'path'
+import {getConfig, adapter, dbMigratePath, noop, throwError} from './utils'
 import Migration from './migration'
 import {Transaction} from 'pg-adapter'
 import {createSchemaMigrations} from './versionsTable'
@@ -70,9 +70,9 @@ const migrateFile = async (db: Migration, version: string, file: string) => {
   const filePath = path.resolve(dbMigratePath(), file)
   const migration = require(filePath)
   if (!db.reverse && !migration.up && !migration.change)
-    throw new Error(`Migration ${file} does not contain up or change exports`)
+    throwError(`Migration ${file} does not contain up or change exports`)
   else if (!migration.down && !migration.change)
-    throw new Error(`Migration ${file} does not contain down or change exports`)
+    throwError(`Migration ${file} does not contain down or change exports`)
 
   for (let key in migration)
     if (key === (db.reverse ? 'down' : 'up') || key === 'change')

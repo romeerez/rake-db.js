@@ -1,3 +1,5 @@
+.idea
+.env
 node_modules
 yarn.lock
 database.js

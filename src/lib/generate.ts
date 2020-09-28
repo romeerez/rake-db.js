@@ -1,10 +1,10 @@
-import path from 'path'
-import fs from 'fs'
-import {dbMigratePath} from './utils'
+import * as path from 'path'
+import * as fs from 'fs'
+import {dbMigratePath, throwError} from './utils'
 
 const migrationName = (args: string[]) => {
   const name = args[0]
-  if (!name) throw new Error('Please provide migration name')
+  if (!name) throwError('Please provide migration name')
   return name
 }
 

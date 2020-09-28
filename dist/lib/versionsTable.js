@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.create = exports.createForConfig = exports.createSchemaMigrations = void 0;
 const utils_1 = require("./utils");
 const schemaMigrationsSQL = 'CREATE TABLE schema_migrations ( version TEXT NOT NULL )';
 exports.createSchemaMigrations = (db) => db.exec(schemaMigrationsSQL);

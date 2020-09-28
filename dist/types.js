@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.IndexOnCallback = exports.ColumnTypes = exports.Table = exports.Migration = void 0;
 const migration_1 = __importDefault(require("./lib/migration"));
 exports.Migration = migration_1.default;
 const table_1 = __importDefault(require("./lib/schema/table"));

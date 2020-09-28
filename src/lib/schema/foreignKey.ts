@@ -1,5 +1,5 @@
 import {plural, singular} from 'pluralize'
-import {join} from '../utils'
+import {join, throwError} from '../utils'
 import {
   AddIndexFunction,
   ConstraintFunction,
@@ -60,7 +60,7 @@ export const reference = (
       options = {...options, foreignKey: {...options.foreignKey, toTable: plural(name)}}
 
   if (typeof options !== 'object')
-    throw new Error(`Unexpected reference options: ${JSON.stringify(options)}`)
+    throwError(`Unexpected reference options: ${JSON.stringify(options)}`)
 
   let {index, ...withoutIndexOptions} = options
 

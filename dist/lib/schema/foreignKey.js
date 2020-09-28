@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.addForeignKey = exports.reference = exports.references = void 0;
 const pluralize_1 = require("pluralize");
 const utils_1 = require("../utils");
 const types_1 = require("../../types");
@@ -34,7 +35,7 @@ exports.reference = (table, column, addIndex, name, { type = 'integer', ...optio
         if (!options.foreignKey.toTable)
             options = { ...options, foreignKey: { ...options.foreignKey, toTable: pluralize_1.plural(name) } };
     if (typeof options !== 'object')
-        throw new Error(`Unexpected reference options: ${JSON.stringify(options)}`);
+        utils_1.throwError(`Unexpected reference options: ${JSON.stringify(options)}`);
     let { index, ...withoutIndexOptions } = options;
     column(utils_1.join(name, 'id'), type, withoutIndexOptions);
     if (index)

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.removeColumn = exports.addColumn = exports.column = void 0;
 const typeSql_1 = __importDefault(require("./typeSql"));
 const foreignKey_1 = require("./foreignKey");
 const columnOptions = (options = {}) => {
