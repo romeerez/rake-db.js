@@ -1,50 +1,54 @@
 import Table from './table'
 import typeSql from './typeSql'
-import {addIndex, removeIndex} from './index'
-import {addColumn, removeColumn} from './column'
-import {addForeignKey} from './foreignKey'
-import {noop} from '../utils'
-import {Migration, ColumnOptions, ForeignKeyOptions, IndexOptions} from '../../types'
+import { addIndex, removeIndex } from './index'
+import { addColumn, removeColumn } from './column'
+import { addForeignKey } from './foreignKey'
+import { noop } from '../utils'
+import {
+  Migration,
+  ColumnOptions,
+  ForeignKeyOptions,
+  IndexOptions,
+} from '../../types'
 
 const addConstraint = (name: string, sql?: string) =>
   `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
 
-const removeConstraint = (name: string) =>
-  `DROP CONSTRAINT "${name}"`
+const removeConstraint = (name: string) => `DROP CONSTRAINT "${name}"`
 
-export type ChangeTableCallback = (t: ChangeTable) => any
+export type ChangeTableCallback = (t: ChangeTable) => void
 
 export class ChangeTable extends Table {
-  addColumnSql = (sql: string) =>
-    this.execute(`ADD COLUMN ${sql}`)
+  addColumnSql = (sql: string) => this.execute(`ADD COLUMN ${sql}`)
 
   constraint = (name: string, sql?: string) => {
-    this.execute(this.reverse ? removeConstraint(name) : addConstraint(name, sql))
+    this.execute(
+      this.reverse ? removeConstraint(name) : addConstraint(name, sql),
+    )
   }
 
   removeConstraint = (name: string, sql?: string) =>
-    this.execute(this.reverse ? addConstraint(name, sql) : removeConstraint(name))
+    this.execute(
+      this.reverse ? addConstraint(name, sql) : removeConstraint(name),
+    )
 
   alterColumn = (name: string, sql: string) =>
     this.execute(`ALTER COLUMN "${name}" ${sql}`)
 
   change = (name: string, options: ColumnOptions) => {
-    const {reverse} = this
+    const { reverse } = this
     this.reverse = false
 
-    if (options.type && options.default || options.default === null)
+    if ((options.type && options.default) || options.default === null)
       this.alterColumn(name, `DROP DEFAULT`)
     if (options.type)
       this.alterColumn(name, `TYPE ${typeSql(options.type, options)}`)
     if (options.default !== undefined)
       this.alterColumn(name, `SET DEFAULT ${options.default}`)
-    if (options.null !== undefined)
-      this.null(name, options.null)
-    if (options.index)
-      this.index(name, options.index)
-    else if (options.index === false)
-      this.removeIndex(name, options)
-    if (options.hasOwnProperty('comment') && options.comment)
+    if (options.null !== undefined) this.null(name, options.null)
+    if (options.index) this.index(name, options.index)
+    else if (options.index === false) this.removeIndex(name, options)
+    if ('comment' in options && options.comment)
       this.comments.push([name, options.comment])
 
     this.reverse = reverse
@@ -53,8 +57,11 @@ export class ChangeTable extends Table {
   comment = (column: string, message: string) =>
     this.comments.push([column, message])
 
-  default = (column: string, value: any) =>
-    this.alterColumn(column, value === null ? 'DROP DEFAULT' : `SET DEFAULT ${value}`)
+  default = (column: string, value: unknown) =>
+    this.alterColumn(
+      column,
+      value === null ? 'DROP DEFAULT' : `SET DEFAULT ${value}`,
+    )
 
   null = (column: string, value: boolean) =>
     this.alterColumn(column, value ? 'DROP NOT NULL' : 'SET NOT NULL')
@@ -69,13 +76,18 @@ export class ChangeTable extends Table {
     this.indices.push([this.reverse, name, options])
 
   removeForeignKey = (name: string, options: ForeignKeyOptions) =>
-    addForeignKey(this.tableName, this.removeConstraint, this.removeIndex, name, options)
+    addForeignKey(
+      this.tableName,
+      this.removeConstraint,
+      this.removeIndex,
+      name,
+      options,
+    )
 
   __commit = (db: Migration, fn?: ChangeTableCallback) => {
     this.reverse = db.reverse
 
-    if (fn)
-      fn(this)
+    if (fn) fn(this)
 
     if (this.lines.length) {
       let sql = `ALTER TABLE "${this.tableName}"`
@@ -83,12 +95,10 @@ export class ChangeTable extends Table {
       db.exec(sql).catch(noop)
     }
 
-    for (let args of this.indices) {
+    for (const args of this.indices) {
       const [create, name, options] = args
-      if (create)
-        db.exec(addIndex(this.tableName, name, options)).catch(noop)
-      else
-        db.exec(removeIndex(this.tableName, name, options)).catch(noop)
+      if (create) db.exec(addIndex(this.tableName, name, options)).catch(noop)
+      else db.exec(removeIndex(this.tableName, name, options)).catch(noop)
     }
 
     this.addComments(db)

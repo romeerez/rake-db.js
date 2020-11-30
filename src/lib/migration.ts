@@ -1,8 +1,8 @@
-import {Adapter, AdapterProps} from 'pg-adapter'
-import {CreateTable} from './schema/createTable'
-import {ChangeTable, ChangeTableCallback} from './schema/changeTable'
-import {plural, singular} from 'pluralize'
-import {noop, join} from './utils'
+import { Adapter, AdapterProps } from 'pg-adapter'
+import { CreateTable } from './schema/createTable'
+import { ChangeTable, ChangeTableCallback } from './schema/changeTable'
+import { plural, singular } from 'pluralize'
+import { noop, join } from './utils'
 import {
   Table,
   TableOptions,
@@ -14,8 +14,12 @@ import {
   IndexOptions,
 } from '../types'
 
-const createTable = (db: Migration, name: string, fn?: TableCallback, options?: TableOptions) =>
-  new CreateTable(name, db.reverse, options).__commit(db, fn)
+const createTable = (
+  db: Migration,
+  name: string,
+  fn?: TableCallback,
+  options?: TableOptions,
+) => new CreateTable(name, db.reverse, options).__commit(db, fn)
 
 const dropTable = (db: Migration, name: string) =>
   db.exec(`DROP TABLE "${plural(name)}" CASCADE`).catch(noop)
@@ -34,22 +38,24 @@ const createJoinTable = (
   let columnOptions: ColumnOptions | undefined
   let tableOptions: TableOptions | undefined
   if (typeof options === 'object') {
-    ({tableName, columnOptions, ...tableOptions} = options)
+    ;({ tableName, columnOptions, ...tableOptions } = options)
   }
 
   const name = tableName || join(...[tableOne, tableTwo].sort())
-  columnOptions = {type: 'integer', null: false, ...columnOptions}
+  columnOptions = { type: 'integer', null: false, ...columnOptions }
   const fn = (t: Table) => {
     t.belongsTo(tableOne, columnOptions)
     t.belongsTo(tableTwo, columnOptions)
-    if (cb)
-      cb(t)
+    if (cb) cb(t)
   }
   return createTable(db, name, fn, tableOptions)
 }
 
 const dropJoinTable = (
-  db: Migration, tableOne: string, tableTwo: string, options?: JoinTableOptions | TableCallback
+  db: Migration,
+  tableOne: string,
+  tableTwo: string,
+  options?: JoinTableOptions | TableCallback,
 ) => {
   const tableName = typeof options === 'object' ? options.tableName : undefined
   dropTable(db, tableName || join(...[tableOne, tableTwo].sort()))
@@ -58,14 +64,17 @@ const dropJoinTable = (
 export default class Migration extends Adapter {
   reverse: boolean
 
-  constructor({reverse, ...params}: AdapterProps & {reverse: boolean}) {
+  constructor({ reverse, ...params }: AdapterProps & { reverse: boolean }) {
     super(params)
     this.reverse = reverse
   }
 
-  createTable(name: string, options?: TableOptions | TableCallback, fn?: TableCallback) {
-    if (this.reverse)
-      return dropTable(this, name)
+  createTable(
+    name: string,
+    options?: TableOptions | TableCallback,
+    fn?: TableCallback,
+  ) {
+    if (this.reverse) return dropTable(this, name)
 
     if (typeof options === 'function') {
       fn = options as TableCallback
@@ -75,7 +84,11 @@ export default class Migration extends Adapter {
     return createTable(this, name, fn as TableCallback, options)
   }
 
-  changeTable(name: string, options?: TableOptions | ChangeTableCallback, fn?: ChangeTableCallback) {
+  changeTable(
+    name: string,
+    options?: TableOptions | ChangeTableCallback,
+    fn?: ChangeTableCallback,
+  ) {
     if (typeof options === 'function') {
       fn = options as ChangeTableCallback
       options = {}
@@ -84,7 +97,11 @@ export default class Migration extends Adapter {
     return new ChangeTable(name, this.reverse, options).__commit(this, fn)
   }
 
-  dropTable(name: string, options?: TableOptions | TableCallback, fn?: TableCallback) {
+  dropTable(
+    name: string,
+    options?: TableOptions | TableCallback,
+    fn?: TableCallback,
+  ) {
     if (this.reverse) {
       if (typeof options === 'function')
         return new CreateTable(name, this.reverse).__commit(this, options)
@@ -96,18 +113,20 @@ export default class Migration extends Adapter {
   }
 
   renameTable(from: string, to: string) {
-    if (this.reverse)
-      renameTable(this, to, from)
-    else
-      renameTable(this, from, to)
+    if (this.reverse) renameTable(this, to, from)
+    else renameTable(this, from, to)
   }
-
 
   addBelongsTo(table: string, name: string, options?: ReferenceOptions) {
     this.changeTable(table, (t) => t.belongsTo(name, options))
   }
 
-  addColumn(table: string, name: string, type: string, options?: ColumnOptions) {
+  addColumn(
+    table: string,
+    name: string,
+    type: string,
+    options?: ColumnOptions,
+  ) {
     this.changeTable(table, (t) => t.column(name, type, options))
   }
 
@@ -135,7 +154,7 @@ export default class Migration extends Adapter {
     this.changeTable(table, (t) => t.comment(column, comment))
   }
 
-  changeColumnDefault(table: string, column: string, value: any) {
+  changeColumnDefault(table: string, column: string, value: unknown) {
     this.changeTable(table, (t) => t.default(column, value))
   }
 
@@ -144,43 +163,50 @@ export default class Migration extends Adapter {
   }
 
   changeTableComment(table: string, comment: string) {
-    this.changeTable(table, {comment})
+    this.changeTable(table, { comment })
   }
 
   columnExists(table: string, column: string) {
     const value = this.value(
       'SELECT 1 FROM "information_schema"."columns" ' +
-      `WHERE "table_name" = '${table}' AND "column_name" = '${column}'`
+        `WHERE "table_name" = '${table}' AND "column_name" = '${column}'`,
     )
     return this.reverse ? !value : value
   }
 
   createJoinTable(
-    tableOne: string, tableTwo: string, options?: JoinTableOptions | TableCallback, cb?: TableCallback
+    tableOne: string,
+    tableTwo: string,
+    options?: JoinTableOptions | TableCallback,
+    cb?: TableCallback,
   ) {
-    if (this.reverse)
-      return dropJoinTable(this, tableOne, tableTwo, options)
+    if (this.reverse) return dropJoinTable(this, tableOne, tableTwo, options)
     createJoinTable(this, tableOne, tableTwo, options, cb)
   }
 
   dropJoinTable(
-    tableOne: string, tableTwo: string, options?: JoinTableOptions | TableCallback, cb?: TableCallback
+    tableOne: string,
+    tableTwo: string,
+    options?: JoinTableOptions | TableCallback,
+    cb?: TableCallback,
   ) {
     if (this.reverse)
       return createJoinTable(this, tableOne, tableTwo, options, cb)
     dropJoinTable(this, tableOne, tableTwo, options)
   }
 
-  foreignKeyExists(fromTable: string, options: string | {name?: string, column: string}) {
+  foreignKeyExists(
+    fromTable: string,
+    options: string | { name?: string; column: string },
+  ) {
     let name
     if (typeof options === 'string')
       name = join(fromTable, singular(options), 'id', 'fkey')
-    else
-      name = options.name || join(fromTable, options.column, 'fkey')
+    else name = options.name || join(fromTable, options.column, 'fkey')
 
     const value = this.value(
       'SELECT 1 FROM "information_schema"."table_constraints" ' +
-      `WHERE "constraint_name" = '${name}'`
+        `WHERE "constraint_name" = '${name}'`,
     )
     return this.reverse ? !value : value
   }
@@ -188,7 +214,7 @@ export default class Migration extends Adapter {
   tableExists(table: string) {
     const value = this.value(
       'SELECT FROM "information_schema"."tables" ' +
-      `WHERE "table_name" = '${table}'`
+        `WHERE "table_name" = '${table}'`,
     )
     return this.reverse ? !value : value
   }

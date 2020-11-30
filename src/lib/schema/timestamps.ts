@@ -1,5 +1,5 @@
-import {join} from '../utils'
-import {ColumnFunction, ColumnOptions} from '../../types'
+import { join } from '../utils'
+import { ColumnFunction, ColumnOptions } from '../../types'
 
 export default (column: ColumnFunction, options: ColumnOptions = {}) => {
   if (options.default === undefined) options.default = 'now()'

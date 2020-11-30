@@ -1,12 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IndexOnCallback = exports.ColumnTypes = exports.Table = exports.Migration = void 0;
-const migration_1 = __importDefault(require("./lib/migration"));
+var migration_1 = require("./lib/migration");
 exports.Migration = migration_1.default;
-const table_1 = __importDefault(require("./lib/schema/table"));
+var table_1 = require("./lib/schema/table");
 exports.Table = table_1.default;
 var ColumnTypes;
 (function (ColumnTypes) {

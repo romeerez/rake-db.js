@@ -1,9 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {DbConfigsPath, dbDirPath, dbMigratePath} from './utils'
+import { DbConfigsPath, dbDirPath, dbMigratePath } from './utils'
 
-const initConfig =
-`module.exports = {
+const initConfig = `module.exports = {
   development: {
     database: 'dbname',
     user: '${process.env.USER || 'postgres'}',
@@ -25,7 +24,7 @@ const createConfig = () => {
   })
 }
 
-const createDbDir = (cb: (...args: any[]) => any) => {
+const createDbDir = (cb: (...args: unknown[]) => unknown) => {
   const dirPath = dbDirPath()
   fs.access(dirPath, (err) => {
     if (!err) return cb()

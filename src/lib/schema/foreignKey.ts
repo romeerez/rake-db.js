@@ -1,5 +1,5 @@
-import {plural, singular} from 'pluralize'
-import {join, throwError} from '../utils'
+import { plural, singular } from 'pluralize'
+import { join, throwError } from '../utils'
 import {
   AddIndexFunction,
   ConstraintFunction,
@@ -7,7 +7,8 @@ import {
   IndexOptions,
   ReferenceOptions,
   IndexOnCallback,
-  ColumnFunction, ColumnOptions,
+  ColumnFunction,
+  ColumnOptions,
 } from '../../types'
 
 const changeIndex = (
@@ -16,27 +17,25 @@ const changeIndex = (
   name: string,
   index: boolean | IndexOptions,
 ) => {
-  if (index === true)
-    index = {}
+  if (index === true) index = {}
   addIndex(join(name, 'id'), index)
 }
 
-export const references = ({toTable, primaryKey = 'id', onDelete, onUpdate}: ForeignKeyOptions) => {
+export const references = ({
+  toTable,
+  primaryKey = 'id',
+  onDelete,
+  onUpdate,
+}: ForeignKeyOptions) => {
   const sql = []
-  sql.push(
-    'REFERENCES',
-    `"${toTable}"`,
-    `("${primaryKey}")`
-  )
+  sql.push('REFERENCES', `"${toTable}"`, `("${primaryKey}")`)
   if (onDelete) {
     const value = IndexOnCallback[onDelete]
-    if (value)
-      sql.push('ON DELETE', value)
+    if (value) sql.push('ON DELETE', value)
   }
   if (onUpdate) {
     const value = IndexOnCallback[onUpdate]
-    if (value)
-      sql.push('ON UPDATE', value)
+    if (value) sql.push('ON UPDATE', value)
   }
   return sql.join(' ')
 }
@@ -46,35 +45,37 @@ export const reference = (
   column: ColumnFunction,
   addIndex: AddIndexFunction,
   name: string,
-  {type = 'integer', ...options}: ReferenceOptions = {}
+  { type = 'integer', ...options }: ReferenceOptions = {},
 ) => {
   table = plural(table)
   name = singular(name)
 
-  if (options.foreignKey === true)
-    options = {...options, foreignKey: {}}
+  if (options.foreignKey === true) options = { ...options, foreignKey: {} }
   if (typeof options.foreignKey === 'string')
-    options = {...options, foreignKey: {column: options.foreignKey}}
+    options = { ...options, foreignKey: { column: options.foreignKey } }
   if (typeof options.foreignKey === 'object')
     if (!options.foreignKey.toTable)
-      options = {...options, foreignKey: {...options.foreignKey, toTable: plural(name)}}
+      options = {
+        ...options,
+        foreignKey: { ...options.foreignKey, toTable: plural(name) },
+      }
 
   if (typeof options !== 'object')
     throwError(`Unexpected reference options: ${JSON.stringify(options)}`)
 
-  let {index, ...withoutIndexOptions} = options
+  const { index, ...withoutIndexOptions } = options
 
   column(join(name, 'id'), type, withoutIndexOptions as ColumnOptions)
 
-  if (index)
-    changeIndex(table, addIndex, name, index)
+  if (index) changeIndex(table, addIndex, name, index)
 }
 
 const getConstraintName = (
-  table: string, foreignKey: string | [string, string], options: ForeignKeyOptions
+  table: string,
+  foreignKey: string | [string, string],
+  options: ForeignKeyOptions,
 ) => {
-  if (options.name)
-    return options.name
+  if (options.name) return options.name
   return join(table, foreignKey as string, 'fkey')
 }
 
@@ -83,7 +84,7 @@ export const addForeignKey = (
   constraint: ConstraintFunction,
   addIndex: AddIndexFunction,
   name: string,
-  options: ForeignKeyOptions = {}
+  options: ForeignKeyOptions = {},
 ) => {
   table = plural(table)
   name = singular(name)
@@ -91,16 +92,14 @@ export const addForeignKey = (
   options = {
     toTable: plural(name),
     primaryKey: `id`,
-    ...options
+    ...options,
   }
 
   let foreignKey: string | undefined = options.foreignKey as string | undefined
-  if (!foreignKey)
-    foreignKey = join(name, 'id')
+  if (!foreignKey) foreignKey = join(name, 'id')
   const sql = `FOREIGN KEY ("${foreignKey}") ${references(options)}`
   const constraintName = getConstraintName(table, foreignKey, options) as string
   constraint(constraintName, sql)
 
-  if (options.index)
-    changeIndex(table, addIndex, name, options.index)
+  if (options.index) changeIndex(table, addIndex, name, options.index)
 }
