@@ -1,38 +1,99 @@
-import { exec } from 'child_process'
-import { getConfig } from './utils'
-import { createForConfig } from './versionsTable'
-import { DbConfig } from '../types'
-import { parseUrl } from 'pg-adapter'
+import {
+  askAdminCreds,
+  createSchemaMigrations,
+  Creds,
+  getConfig,
+} from './utils'
+import { Adapter } from 'pg-adapter'
 
-type CallbackType = (config: DbConfig) => void
-
-const execCreateOrDrop = (
-  utility: string,
-  config: DbConfig,
-  callback?: CallbackType,
+const createOrDropDatabase = async (
+  {
+    sql,
+    successMessage,
+    alreadyMessage,
+    createVersionsTable,
+  }: {
+    sql: string
+    successMessage: string
+    alreadyMessage: string
+    createVersionsTable?: boolean
+  },
+  creds: Creds,
+  adminCreds: Creds,
 ) => {
-  if (config.url) config = parseUrl(config.url)
-  let command = utility
-  if (config.host) command += ' -h ' + config.host
-  if (config.port) command += ' -p ' + config.port
-  if (config.user) command += ' -U ' + config.user
-  command += ' ' + config.database
-  exec(command, async (error, stdout, stderr) => {
-    if (stderr) console.error(stderr.trim())
-    else {
-      if (stdout.length) console.log(stdout)
-      if (callback) await callback(config)
-      const action = utility === 'createdb' ? 'created' : 'dropped'
-      console.log(`Database ${config.database} was ${action} successfully`)
+  const db = new Adapter(adminCreds)
+  await db.connect()
+  try {
+    await db.exec(sql)
+    console.log(successMessage)
+  } catch (err) {
+    if (err.code === '42P04' || err.code === '3D000') {
+      console.log(alreadyMessage)
+    } else if (err.code === '42501') {
+      Object.assign(adminCreds, await askAdminCreds())
+      await createOrDropDatabase(
+        { sql, successMessage, alreadyMessage, createVersionsTable },
+        creds,
+        adminCreds,
+      )
+      return
+    } else {
+      throw err
     }
+  } finally {
+    await db.close()
+  }
+
+  if (!createVersionsTable) return
+
+  const targetDb = new Adapter(creds)
+  await createSchemaMigrations(targetDb)
+  await targetDb.close()
+}
+
+const createOrDrop = async ({
+  sql,
+  successMessage,
+  alreadyMessage,
+  createVersionsTable,
+}: {
+  sql(config: Creds): string
+  successMessage(config: Creds): string
+  alreadyMessage(config: Creds): string
+  createVersionsTable?: boolean
+}) => {
+  const { configs } = getConfig()
+  const adminCreds = { ...configs[0], database: 'postgres' }
+  for (const config of configs) {
+    await createOrDropDatabase(
+      {
+        sql: sql(config),
+        successMessage: successMessage(config),
+        alreadyMessage: alreadyMessage(config),
+        createVersionsTable,
+      },
+      config,
+      adminCreds,
+    )
+  }
+}
+
+export const createDb = () => {
+  createOrDrop({
+    sql: ({ database, user }) =>
+      `CREATE DATABASE "${database}" OWNER "${user}"`,
+    successMessage: ({ database }) =>
+      `Database ${database} successfully created`,
+    alreadyMessage: ({ database }) => `Database ${database} already exists`,
+    createVersionsTable: true,
   })
 }
 
-const createOrDrop = async (utility: string, callback?: CallbackType) => {
-  const config = await getConfig()
-  for (const env in config) execCreateOrDrop(utility, config[env], callback)
+export const dropDb = () => {
+  createOrDrop({
+    sql: ({ database }) => `DROP DATABASE "${database}"`,
+    successMessage: ({ database }) =>
+      `Database ${database} successfully dropped`,
+    alreadyMessage: ({ database }) => `Database ${database} does not exist`,
+  })
 }
-
-export const createDb = () => createOrDrop('createdb', createForConfig)
-
-export const dropDb = () => createOrDrop('dropdb')

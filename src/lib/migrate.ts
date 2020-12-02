@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { getConfig, adapter, dbMigratePath, noop, throwError } from './utils'
+import { getConfig, noop, createSchemaMigrations } from './utils'
 import Migration from './migration'
 import { Transaction } from 'pg-adapter'
-import { createSchemaMigrations } from './versionsTable'
+import 'typescript-require'
 
 type MigrationFile = {
   version: string
@@ -12,8 +12,8 @@ type MigrationFile = {
 
 const getMigratedVersionsQuery = (db: Migration) =>
   db.value(
-    `SELECT COALESCE(json_agg(schema_migrations.version ORDER BY version), '[]')` +
-      `FROM schema_migrations`,
+    `SELECT COALESCE(json_agg("schemaMigrations".version ORDER BY version), '[]')` +
+      `FROM "schemaMigrations"`,
   )
 
 const getMigratedVersions = async (db: Migration) => {
@@ -29,9 +29,9 @@ const getMigratedVersions = async (db: Migration) => {
   }
 }
 
-const getFiles = (rollback: boolean) =>
+const getFiles = (migrationsPath: string, rollback: boolean) =>
   new Promise((resolve, reject) => {
-    fs.readdir(dbMigratePath(), (err, allFiles) => {
+    fs.readdir(migrationsPath, (err, allFiles) => {
       if (err) return reject(err)
       if (rollback) allFiles.sort((a, b) => (a < b ? 1 : -1))
       else allFiles.sort()
@@ -41,7 +41,7 @@ const getFiles = (rollback: boolean) =>
         const match = file.match(/\..+$/)
         if (!match) return
         const ext = match[0]
-        if (ext !== '.js') return
+        if (ext !== '.ts') return
         if (arr.length === 1) return
         const version = arr[0]
         if (version.length !== 14) return
@@ -61,19 +61,24 @@ const run = (
     await t.sync()
     if (t.failed) return
     const sql = db.reverse
-      ? `DELETE FROM schema_migrations WHERE version = '${version}'`
-      : `INSERT INTO schema_migrations VALUES ('${version}')`
+      ? `DELETE FROM "schemaMigrations" WHERE "version" = '${version}'`
+      : `INSERT INTO "schemaMigrations" VALUES ('${version}')`
 
     t.exec(sql).catch(noop)
   })
 
-const migrateFile = async (db: Migration, version: string, file: string) => {
-  const filePath = path.resolve(dbMigratePath(), file)
+const migrateFile = async (
+  db: Migration,
+  migrationsPath: string,
+  version: string,
+  file: string,
+) => {
+  const filePath = path.resolve(migrationsPath, file)
   const migration = require(filePath)
   if (!db.reverse && !migration.up && !migration.change)
-    throwError(`Migration ${file} does not contain up or change exports`)
+    throw new Error(`Migration ${file} does not contain up or change exports`)
   else if (!migration.down && !migration.change)
-    throwError(`Migration ${file} does not contain down or change exports`)
+    throw new Error(`Migration ${file} does not contain down or change exports`)
 
   for (const key in migration)
     if (key === (db.reverse ? 'down' : 'up') || key === 'change')
@@ -82,10 +87,14 @@ const migrateFile = async (db: Migration, version: string, file: string) => {
   console.info(`${filePath} ${db.reverse ? 'rolled back' : 'migrated'}`)
 }
 
-const migrateDb = async (db: Migration, files: MigrationFile[]) => {
+const migrateDb = async (
+  db: Migration,
+  migrationsPath: string,
+  files: MigrationFile[],
+) => {
   for (const { path, version } of files) {
     try {
-      await migrateFile(db, version, path)
+      await migrateFile(db, migrationsPath, version, path)
     } catch (err) {
       console.error(err)
       break
@@ -96,13 +105,12 @@ const migrateDb = async (db: Migration, files: MigrationFile[]) => {
 const migrateOrRollback = async (rollback: boolean) => {
   let db
   try {
-    const configs = await getConfig()
-    for (const env in configs) {
-      const config = configs[env]
-      db = <Migration>adapter(config, Migration, { reverse: rollback })
+    const { migrationsPath, configs } = await getConfig()
+    for (const config of configs) {
+      db = new Migration({ ...config, reverse: rollback })
       await db.connect()
       let [files, versions] = (await Promise.all([
-        getFiles(rollback),
+        getFiles(migrationsPath, rollback),
         getMigratedVersions(db),
       ])) as [MigrationFile[], string]
       versions = JSON.parse(versions as string)
@@ -118,7 +126,7 @@ const migrateOrRollback = async (rollback: boolean) => {
         }
       } else files = files.filter((file) => !versions.includes(file.version))
 
-      if (files.length) await migrateDb(db, files)
+      if (files.length) await migrateDb(db, migrationsPath, files)
 
       db.close()
     }

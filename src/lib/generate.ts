@@ -1,26 +1,10 @@
-import * as path from 'path'
 import * as fs from 'fs'
-import { dbMigratePath, throwError } from './utils'
-
-const migrationName = (args: string[]) => {
-  const name = args[0]
-  if (!name) throwError('Please provide migration name')
-  return name
-}
-
-const migrateDirPath = async () => {
-  const path = dbMigratePath()
-  try {
-    fs.mkdirSync(path, { recursive: true })
-  } catch (err) {
-    // noop
-  }
-  return path
-}
+import * as path from 'path'
+import { getConfig, mkdirRecursive } from './utils'
 
 const generateFileContent = (name: string, args: string[]) => {
   const lines = [
-    "import {Migration} from 'rake-db'\n\nexport const change = (db: Migration, up: boolean) => {",
+    "import { Migration } from 'rake-db'\n\nexport const change = (db: Migration, up: boolean) => {",
   ]
 
   let command: string | undefined = undefined
@@ -67,7 +51,7 @@ const generateFileContent = (name: string, args: string[]) => {
 const createMigrationFile = (
   name: string,
   content: string,
-  dirPath: string,
+  migrationsPath: string,
 ) => {
   const now = new Date()
   const prefix = [
@@ -80,12 +64,15 @@ const createMigrationFile = (
   ]
     .map((value) => (value < 10 ? `0${value}` : value))
     .join('')
-  fs.writeFileSync(path.join(dirPath, `${prefix}_${name}.ts`), content)
+  const filePath = path.resolve(migrationsPath, `${prefix}_${name}.ts`)
+  fs.writeFileSync(filePath, content)
+  console.log(`Created ${filePath}`)
 }
 
-export const generate = async (args: string[]) => {
-  const name = migrationName(args)
-  const dirPath = await migrateDirPath()
-  const content = generateFileContent(name, args.slice(1))
-  await createMigrationFile(name, content, dirPath)
+export const generate = async (name: string, ...fields: string[]) => {
+  if (!name) throw new Error('Please provide migration name')
+  const { migrationsPath } = getConfig()
+  mkdirRecursive(migrationsPath)
+  const content = generateFileContent(name, fields)
+  await createMigrationFile(name, content, migrationsPath)
 }

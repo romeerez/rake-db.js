@@ -1,62 +1,79 @@
 # rake-db
 
-This is a migration tool which will be appreciated by people who get used to Ruby on Rails migrations.
+This is a migration tool for Postgres which is highly inspired by Ruby on Rails migrations, main features are:
+- Nice syntax similar to RoR migrations
+- It can automatically revert in common cases
+
+Restrictions:
+- Currently it supports only Typescript migrations
+- Only Postgres is supported
 
 It can create, drop, migrate and rollback database, it can generate migrations.
 
-Only postgres is supported.
+By default, all columns, indices and foreign keys names are generated in camelCase, you can change it by .env variable.
 
-By default column, index and foreign keys names are generated in camelCase, which is configurable in `database.json`
+If you want javascript migrations support please let me know by creating an issue.
 
-Written in typescript.
+## Get started
 
-## CLI
+I'll use `yarn` in this doc, hope you don't mind, of course you can use `npm run` instead, or `pnpm`.
 
-Execute command with `npx` (bit faster) or `yarn`, for example:
-
-`npx rake-db help` will output:
-
-```
-Usage: rake-db [command] [arguments]
-
-DATABASE_URL env variable should be provided or a config file
-
-DATABASE_URL must have format postgres://user:password@host:port/database
-
-Config file for databases could be found in:
-- DB_CONFIG_PATH env variable (absolute path)
-- current_dir/database.js
-- current_dir/config/database.js
-
-Config file should look like:
-(environments keys and amount doesn't matter)
-module.exports = {
-  development: {
-    user: ...,
-    password: ...,
-    database: ...,
-    ...other connection options
-  },
-  test: { same as above },
-  production: { same as above },
-  camelCase: true // by default
+Add a script into `package.json`:
+```json
+{
+  "scripts": {
+    "db": "rake-db"
+  }
 }
+```
 
-Migration files will be generated into:
-- DB_DIR_PATH env variable (absolute path)
-- current_dir/db/migrate
+And now commands become available:
 
-Commands:
-  init                    create empty directories and database.js
-  create                  create all databases
-  create-versions-table   fox existing empty database
-  drop                    drop all databases
-  g, generate             generate migration file
-  migrate                 migrate all pending in all dbs
-  rollback                rollback the last migrated in all dbs
-  no or unknown           print this message
-  
-Generate arguments: (no camel case here for better readability)
+```sh
+yarn db init
+yarn db g create_users name:text password:text
+yarn db migrate
+```
+
+For quick start run:
+```sh
+yarn db init
+```
+
+It will ask you for configs and credentials, then it will create directory for migrations, will create or modify existing `.env` file, will create databases.
+
+After completing you'll have such `.env` file:
+```.env
+DATABASE_URL=postgres://username:password@localhost:5432/db-name
+DATABASE_CAMEL_CASE=true
+MIGRATIONS_PATH=db/migrate
+DATABASES=DATABASE_URL
+```
+
+If you choose to create test database too it will contain multiple DATABASES:
+```.env
+DATABASES=DATABASE_URL,DATABASE_URL_TEST
+```
+
+This means that all commands of `rake-db` will be applied for both of them.
+```sh
+yarn db migrate
+```
+I.e this command will migrate both databases.
+
+## Commands
+
+Command | Description
+--- | ---
+init | creates migrations directory, sets up env config, creates databases
+create | creates databases
+drop | drops databases
+g, generate | generates migration file, see below
+migrate | migrate all pending migrations in all databases
+rollback | rollback the last migrated in all databases
+no or unknown | prints help
+
+Generate arguments:
 - (required) first argument is migration name
   * create_*      template for create table
   * change_*      template for change table
@@ -65,15 +82,17 @@ Generate arguments: (no camel case here for better readability)
   * drop_*        template for drop table
 
 - other arguments considered as columns with types:
-  create_table name:text createdAt:date
+```sh
+yarn db g create_table name:text createdAt:date
 ```
 
 ## Versioning
 
-After database is created via `rake-db create` there were appear table `schema_migrations`
-for storing migrated versions.
+After database is created with `yarn db init` or `yarn db create`, it will contain a `schemaMigrations` table for storing migrated versions.
 
-Migrationg files are generated into `db/migrate` directory:
+If you already have a database without `schemaMigrations`, and you want to use this library, run `yarn db create`, this will just create the table.
+
+Migrations files are generated into `db/migrate` directory:
 
 ```
 db/
@@ -82,20 +101,20 @@ db/
     20200223142823_change_table.ts
 ```
 
-After `rake-db migrate` that table `schema_migrations` will contain two versions,
-after `rake-db rollback` one version will be deleted.
+After `yarn db migrate` that table `schemaMigrations` will contain two versions,
+after `rake-db rollback` one version will be removed from table.
 
 ## Writing migration
 
 Let's create table:
 
 ```bash
-rake-db g create_entities name:text
+yarn db g create_entities name:text
 ```
 
 It will create such migration file:
 ```typescript
-import {Migration} from 'rake-db'
+import { Migration } from 'rake-db'
 
 export const change = (db: Migration, up: boolean) => {
   db.createTable('entities', (t) => {
@@ -105,13 +124,13 @@ export const change = (db: Migration, up: boolean) => {
 }
 ```
 
-Here you can see db in the argument - it's instance of `pg-adapter` package with migration methods,
-it means you can make queries.
+`db` argument inherited from [pg-adapter](https://www.npmjs.com/package/pg-adapter) instance,
+so it has all methods which `pg-adapter` library has, it can make queries.
 
 Second argument `up` is boolean which is true for migrate and `false` for rollback.
 
 ```typescript
-import {Migration} from 'rake-db'
+import { Migration } from 'rake-db'
 
 export const change = (db: Migration, up: boolean) => {
   db.createTable('entities', (t) => {
@@ -120,7 +139,7 @@ export const change = (db: Migration, up: boolean) => {
   })
   
   if (up) {
-    const data = [ {name: 'one'}, {name: 'two'} ]
+    const data = [{ name: 'one' }, { name: 'two' }]
     db.exec(`INSERT INTO entities(name) VALUES ${
       data.map(row => `(${
         [row.name].map(db.quote).join(', ')
@@ -130,10 +149,10 @@ export const change = (db: Migration, up: boolean) => {
 }
 ```
 
-This will fill table with data only when migrating.
+This will fill table with data only when migrating up.
 
-All database operations done in transaction so if query containing error it's not too bad,
-table will not be created, you can fix error and run again.
+All database operations done in transaction so if query contains error - not too bad,
+table won't be created, you can fix error and run again.
 
 ## Migration directions
 
@@ -141,48 +160,50 @@ You can define `export const up` for migrate, `export const down` for rollback o
 
 ## All methods and options
 
-```js
-import {Migration} from 'rake-db'
+Remember that `camelCase` is turned on by default, it affects on join table names, index names.
 
-export const change = (db: Migration, up: boolean) => {
+```js
+import { Migration } from 'rake-db'
+
+export const change = async (db: Migration, up: boolean) => {
   // createTable will drop it on rollback
-  db.createTable('table_name') // create table with single id column
-  db.createTable('table_name', {id: false}) // don't create id column
+  db.createTable('tableName') // create table with single id column
+  db.createTable('tableName', { id: false }) // don't create id column
   
-  // comment is a db feature
-  db.createTable('table_name', {comment: 'what is this table for', id: false}, (t) => { 
-    t.column('column_name', {type: 'custom_type'}) // create column with custom type
+  // comment is a database feature, this will create table with comment
+  db.createTable('tableName', { comment: 'what is this table for', id: false }, (t) => { 
+    t.column('columnName', { type: 'customType' }) // create column with custom type
     
     // Other column options:
     // if you want bigint id set id to false in createTable and use primaryKey: option
-    t.bigserial('id', {primaryKey: true})
-    t.date('some_required_timestamp', {
+    t.bigserial('id', { primaryKey: true })
+    t.date('someRequiredTimestamp', {
       null: false, // add NOT NULL constraint
       default: 'now()', // default accepts plain sql
       comment: 'what is this column for', // db comment for column
     })
-    t.string('string', {default: db.quote('string')}) // to escape values
+    t.string('string', { default: db.quote('string') }) // to escape values
     
-    t.integer('other_table_id', {
+    t.integer('otherTableId', {
       index: true, // add simple index
       // index can accept options instead of true, all options see below:
-      index: {unique: true, name: 'custom_index_name'},
+      index: { unique: true, name: 'customIndexName' },
       
       foreignKey: true, // add FOREIGN KEY constraint
       // foreignKey also can accept options, all options see below:
       foreignKey: {
-        toTable: 'other_table_name'
+        toTable: 'otherTableName'
       }
     })
     
-    t.reference('table') // same as t.integer('table_id")
+    t.reference('table') // same as t.integer('tableName")
     
     // This will create:
-    // - table_id integer, table_type text
+    // - tableName integer, table_type text
     // - unique index including two columns
     // - foreignKey will be just ignored, it can't work here
     t.reference('table', {
-      index: {unique: true},
+      index: { unique: true },
       foreignKey: true
     })
     
@@ -209,14 +230,15 @@ export const change = (db: Migration, up: boolean) => {
     // adds FOREIGN KEY for already defined column
     t.foreignKey('table', {
       primaryKey: 'id', // column related table, id is default
-      foreignKey: 'table_id', // column in current table, [table]_id is default
-      toTable: 'related_table_name', // for example, define author_id foreign key for table users
-      index: true || {...options} // create index
+      foreignKey: 'tableName', // column in current table, [table]_id is default
+      toTable: 'relatedTableName', // for example, define author_id foreign key for table users
+      index: true || { ...options } // create index
     })
     
-    t.index('single_column') // create index
+    // Index:
+    t.index('singleColumn') // create index
     t.index(['column1', 'column2', 'column3']) // create index for multiple columns
-    t.index('here_are_options', {
+    t.index('hereAreOptions', {
       unique: true, // UNIQUE constraint
       length: 20, // argument of column: CREATE INDEX ... ON table (column(20))
       order: 'asc' || 'desc', // order of index: CREATE INDEX ... ON table (column ASC)
@@ -240,9 +262,9 @@ export const change = (db: Migration, up: boolean) => {
     // callback to define other columns
   })
   // for example:
-  db.createJoinTable('songs', 'users', {tableName: 'favorite_songs', foreignKey: true})
+  db.createJoinTable('songs', 'users', { tableName: 'favorite_songs', foreignKey: true })
   
-  db.changeTable('table_name', {comment: 'comment will be updated, null for removing'}, (t) => {
+  db.changeTable('tableName', { comment: 'comment will be updated, null for removing' }, (t) => {
     // for adding new columns all functions from createTable are available
     t.string('add_column') // add column on migrate, remove on rollback
     
@@ -260,11 +282,11 @@ export const change = (db: Migration, up: boolean) => {
     
     t.remove('column', options) // remove column on migrate, add on rollback
     t.removeIndex('column', options) // remove index on migrate, add on rollback
-    t.removeForeignKey('table_name', options) // remove on migrate, add on rollback
+    t.removeForeignKey('tableName', options) // remove on migrate, add on rollback
   })
   
   // drop table on migrate, create on rollback
-  db.dropTable('table_name', options, (t) => {
+  db.dropTable('tableName', options, (t) => {
     // definition of table
   })
   

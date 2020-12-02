@@ -1,5 +1,5 @@
 import { plural, singular } from 'pluralize'
-import { join, throwError } from '../utils'
+import { join } from '../utils'
 import {
   AddIndexFunction,
   ConstraintFunction,
@@ -15,7 +15,7 @@ const changeIndex = (
   table: string,
   addIndex: AddIndexFunction,
   name: string,
-  index: boolean | IndexOptions,
+  index: true | IndexOptions,
 ) => {
   if (index === true) index = {}
   addIndex(join(name, 'id'), index)
@@ -61,7 +61,7 @@ export const reference = (
       }
 
   if (typeof options !== 'object')
-    throwError(`Unexpected reference options: ${JSON.stringify(options)}`)
+    throw new Error(`Unexpected reference options: ${JSON.stringify(options)}`)
 
   const { index, ...withoutIndexOptions } = options
 
