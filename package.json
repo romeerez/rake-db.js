@@ -1,6 +1,6 @@
 {
   "name": "rake-db",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Postgresql migrations like in Ruby on Rails",
   "bin": {
     "rake-db": "dist/rake-db.js"
