@@ -1,6 +1,6 @@
 {
   "name": "rake-db",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Postgresql migrations like in Ruby on Rails",
   "bin": {
     "rake-db": "dist/rake-db.js"
@@ -9,7 +9,7 @@
   "files": [
     "dist"
   ],
-  "repository": "https://gitlab.com/romikus/rake-db.js",
+  "repository": "https://github.com/romeerez/rake-db.js",
   "author": "Roman Kushyn",
   "license": "MIT",
   "keywords": [
