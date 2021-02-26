@@ -3,8 +3,10 @@ import * as path from 'path'
 import { getConfig, noop, createSchemaMigrations } from './utils'
 import Migration from './migration'
 import { Transaction } from 'pg-adapter'
-import 'typescript-require'
 import { errorCodes } from './errorCodes'
+import { register } from 'ts-node'
+
+register()
 
 type MigrationFile = {
   version: string

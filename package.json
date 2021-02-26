@@ -46,6 +46,6 @@
     "enquirer": "^2.3.6",
     "pg-adapter": "^1.1.58",
     "pluralize": "8.x",
-    "typescript-require": "^0.3.0"
+    "ts-node": "^9.1.1"
   }
 }
