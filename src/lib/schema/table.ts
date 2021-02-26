@@ -172,4 +172,8 @@ export default class Table {
   serial(name: string, options?: ColumnOptions) {
     this.column(name, 'serial', options)
   }
+
+  json(name: string, options?: ColumnOptions) {
+    this.column(name, 'json', options)
+  }
 }
