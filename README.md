@@ -2,17 +2,15 @@
 
 This is a migration tool for Postgres which is highly inspired by Ruby on Rails migrations, main features are:
 - Nice syntax similar to RoR migrations
-- It can automatically revert in common cases
+- It can automatically rollback migrations in common cases
 
 Restrictions:
 - Currently it supports only Typescript migrations
 - Only Postgres is supported
 
-It can create, drop, migrate and rollback database, it can generate migrations.
+Can create, drop, migrate and rollback database, and can generate migrations.
 
-By default, all columns, indices and foreign keys names are generated in camelCase, you can change it by .env variable.
-
-If you want javascript migrations support please let me know by creating an issue.
+Allows to set an option so all columns, indices and foreign keys names will be generated with camelCase naming.
 
 ## Get started
 
