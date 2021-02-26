@@ -4,6 +4,7 @@ import { getConfig, noop, createSchemaMigrations } from './utils'
 import Migration from './migration'
 import { Transaction } from 'pg-adapter'
 import 'typescript-require'
+import { errorCodes } from './errorCodes'
 
 type MigrationFile = {
   version: string
@@ -20,7 +21,7 @@ const getMigratedVersions = async (db: Migration) => {
   try {
     return await getMigratedVersionsQuery(db)
   } catch (err) {
-    if (err.message === 'relation "schema_migrations" does not exist') {
+    if (errorCodes[err.code as keyof typeof errorCodes] === 'undefined_table') {
       await createSchemaMigrations(db)
       return await getMigratedVersionsQuery(db)
     } else {
@@ -102,37 +103,57 @@ const migrateDb = async (
   }
 }
 
+const migrateOrRollbackDatabase = async (
+  rollback: boolean,
+  db: Migration,
+  migrationsPath: string,
+) => {
+  await db.connect()
+
+  let [files, versions] = (await Promise.all([
+    getFiles(migrationsPath, rollback),
+    getMigratedVersions(db),
+  ])) as [MigrationFile[], string]
+
+  versions = JSON.parse(versions as string)
+
+  if (rollback) {
+    const lastVersion = versions[versions.length - 1]
+    if (!lastVersion) {
+      files = []
+    } else {
+      const lastFile = files.find(
+        ({ version }) => version === lastVersion,
+      ) as MigrationFile
+      files = [lastFile]
+    }
+  } else {
+    files = files.filter((file) => !versions.includes(file.version))
+  }
+
+  if (files.length) await migrateDb(db, migrationsPath, files)
+}
+
 const migrateOrRollback = async (rollback: boolean) => {
-  let db
-  try {
-    const { migrationsPath, configs } = await getConfig()
-    for (const config of configs) {
-      db = new Migration({ ...config, reverse: rollback })
-      await db.connect()
-      let [files, versions] = (await Promise.all([
-        getFiles(migrationsPath, rollback),
-        getMigratedVersions(db),
-      ])) as [MigrationFile[], string]
-      versions = JSON.parse(versions as string)
-      if (rollback) {
-        const lastVersion = versions[versions.length - 1]
-        if (!lastVersion) {
-          files = []
-        } else {
-          const lastFile = files.find(
-            ({ version }) => version === lastVersion,
-          ) as MigrationFile
-          files = [lastFile]
-        }
-      } else files = files.filter((file) => !versions.includes(file.version))
+  const { migrationsPath, configs } = await getConfig()
+  for (const config of configs) {
+    const db = new Migration({ ...config, reverse: rollback })
+    try {
+      await migrateOrRollbackDatabase(rollback, db, migrationsPath)
+    } catch (err) {
+      if (
+        errorCodes[err.code as keyof typeof errorCodes] ===
+        'invalid_catalog_name'
+      ) {
+        console.error(err.message)
+      } else {
+        console.error(err)
+      }
 
-      if (files.length) await migrateDb(db, migrationsPath, files)
-
+      break
+    } finally {
       db.close()
     }
-  } catch (err) {
-    if (db) db.close()
-    console.error(err)
   }
 }
 
