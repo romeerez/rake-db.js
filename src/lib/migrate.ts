@@ -6,7 +6,7 @@ import { Transaction } from 'pg-adapter'
 import { errorCodes } from './errorCodes'
 import { register } from 'ts-node'
 
-register()
+register({ compilerOptions: { module: 'CommonJS' } })
 
 type MigrationFile = {
   version: string
