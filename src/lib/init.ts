@@ -116,7 +116,7 @@ const tryDatabaseCreds = async (
 const askCamelCase = () =>
   new Confirm({
     message: 'Should it use camelCase for tables and columns names?',
-    initial: process.env.DATABASE_CAMEL_CASE === 'false' ? 'n' : 'y',
+    initial: process.env.DATABASE_CAMEL_CASE === 'true' ? 'y' : 'n',
   }).run()
 
 const askTestDb = async (creds: Creds, adminCreds: AdminCreds) => {

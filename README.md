@@ -42,24 +42,28 @@ yarn db init
 
 It will ask you for configs and credentials, then it will create directory for migrations, will create or modify existing `.env` file, will create databases.
 
-After completing you'll have such `.env` file:
+After completing you'll have such `.env` file, or put values manually:
 ```.env
+# Required unless `DATABASES` set
 DATABASE_URL=postgres://username:password@localhost:5432/db-name
-DATABASE_CAMEL_CASE=true
-MIGRATIONS_PATH=db/migrate
-DATABASES=DATABASE_URL
-```
 
-If you choose to create test database too it will contain multiple DATABASES:
-```.env
+# Optional: you can define any variables for multiple databases
+DATABASE_URL_TEST=postgres://username:password@localhost:5432/db-name-test
+
+# Optional: by default camel case is set to `false`
+DATABASE_CAMEL_CASE=true
+
+# Optional: by default is set to `migrations`
+MIGRATIONS_PATH=migrations
+
+# Optional unless `DATABASE_URL` is set, this defines a list of databases to migrate at once
 DATABASES=DATABASE_URL,DATABASE_URL_TEST
 ```
 
-This means that all commands of `rake-db` will be applied for both of them.
+If you specified multiple databases this command will migrate them all at once:
 ```sh
 yarn db migrate
 ```
-I.e this command will migrate both databases.
 
 ## Commands
 
