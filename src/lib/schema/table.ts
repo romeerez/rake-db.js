@@ -2,7 +2,6 @@ import { quote } from 'pg-adapter'
 import { addColumn, removeColumn } from './column'
 import { reference, addForeignKey } from './foreignKey'
 import timestamps from './timestamps'
-import { plural } from 'pluralize'
 import { noop } from '../utils'
 import {
   Migration,
@@ -38,7 +37,7 @@ export default class Table {
   constraint!: (name: string, sql?: string) => void
 
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
-    this.tableName = plural(tableName)
+    this.tableName = tableName
     this.reverse = reverse
     this.options = options
     this.lines = []
@@ -174,6 +173,6 @@ export default class Table {
   }
 
   json(name: string, options?: ColumnOptions) {
-    this.column(name, 'json', options)
+    this.column(name, 'jsonb', options)
   }
 }

@@ -10,11 +10,9 @@ Restrictions:
 
 Can create, drop, migrate and rollback database, and can generate migrations.
 
-Allows to set an option so all columns, indices and foreign keys names will be generated with camelCase naming.
+Has an option to generate names of columns, indices and foreign keys in camelCase.
 
 ## Get started
-
-I'll use `yarn` in this doc, hope you don't mind, of course you can use `npm run` instead, or `pnpm`.
 
 Add a script into `package.json`:
 ```json
@@ -25,17 +23,17 @@ Add a script into `package.json`:
 }
 ```
 
-And now commands become available:
+And now commands become available (`npm run` command can be replaced with `yarn`):
 
 ```sh
-yarn db init
-yarn db g create_users name:text password:text
-yarn db migrate
+npm run db init
+npm run db g create_users name:text password:text
+npm run db migrate
 ```
 
 For quick start run:
 ```sh
-yarn db init
+npm run db init
 ```
 
 It will ask you for configs and credentials, then it will create directory for migrations, will create or modify existing `.env` file, will create databases.
@@ -60,7 +58,7 @@ DATABASES=DATABASE_URL,DATABASE_URL_TEST
 
 If you specified multiple databases this command will migrate them all at once:
 ```sh
-yarn db migrate
+npm run db migrate
 ```
 
 ## Commands
@@ -85,14 +83,12 @@ Generate arguments:
 
 - other arguments considered as columns with types:
 ```sh
-yarn db g create_table name:text createdAt:date
+npm run db g create_table name:text createdAt:date
 ```
 
 ## Versioning
 
-After database is created with `yarn db init` or `yarn db create`, it will contain a `schemaMigrations` table for storing migrated versions.
-
-If you already have a database without `schemaMigrations`, and you want to use this library, run `yarn db create`, this will just create the table.
+`rake-db` is using special table `schemaMigrations` to store info about which migrations where applied, table will be created unless exists before running migration.
 
 Migrations files are generated into `db/migrate` directory:
 
@@ -103,15 +99,12 @@ db/
     20200223142823_change_table.ts
 ```
 
-After `yarn db migrate` that table `schemaMigrations` will contain two versions,
-after `rake-db rollback` one version will be removed from table.
-
 ## Writing migration
 
 Let's create table:
 
 ```bash
-yarn db g create_entities name:text
+npm run db g create_entities name:text
 ```
 
 It will create such migration file:
@@ -153,7 +146,7 @@ export const change = (db: Migration, up: boolean) => {
 
 This will fill table with data only when migrating up.
 
-All database operations done in transaction so if query contains error - not too bad,
+All migrations are running in transaction so if query contains error - not too bad,
 table won't be created, you can fix error and run again.
 
 ## Migration directions
@@ -162,49 +155,48 @@ You can define `export const up` for migrate, `export const down` for rollback o
 
 ## All methods and options
 
-Remember that `camelCase` is turned on by default, it affects on join table names, index names.
-
 ```js
 import { Migration } from 'rake-db'
 
 export const change = async (db: Migration, up: boolean) => {
   // createTable will drop it on rollback
-  db.createTable('tableName') // create table with single id column
-  db.createTable('tableName', { id: false }) // don't create id column
+  db.createTable('table_name') // create table with single id column
+  db.createTable('table_name', { id: false }) // don't create id column
   
   // comment is a database feature, this will create table with comment
-  db.createTable('tableName', { comment: 'what is this table for', id: false }, (t) => { 
-    t.column('columnName', { type: 'customType' }) // create column with custom type
+  db.createTable('table_name', { comment: 'what is this table for', id: false }, (t) => { 
+    t.column('column_name', { type: 'custom_type' }) // create column with custom type
     
     // Other column options:
     // if you want bigint id set id to false in createTable and use primaryKey: option
     t.bigserial('id', { primaryKey: true })
-    t.date('someRequiredTimestamp', {
+    t.date('some_required_timestamp', {
       null: false, // add NOT NULL constraint
       default: 'now()', // default accepts plain sql
       comment: 'what is this column for', // db comment for column
     })
     t.string('string', { default: db.quote('string') }) // to escape values
     
-    t.integer('otherTableId', {
+    t.integer('other_table_id', {
       index: true, // add simple index
       // index can accept options instead of true, all options see below:
-      index: { unique: true, name: 'customIndexName' },
+      index: { unique: true, name: 'custom_index_name' },
       
       foreignKey: true, // add FOREIGN KEY constraint
       // foreignKey also can accept options, all options see below:
       foreignKey: {
-        toTable: 'otherTableName'
+        toTable: 'other_table_name'
       }
     })
     
-    t.reference('table') // same as t.integer('tableName")
+    t.reference('table') // same as t.integer('table_id"), it doesn't put any restrictions! I guess I will have to change this behaviour
     
     // This will create:
-    // - tableName integer, table_type text
-    // - unique index including two columns
-    // - foreignKey will be just ignored, it can't work here
+    // - table_id bigint
+    // - unique index
+    // - a foreign key
     t.reference('table', {
+      type: 'bigint',
       index: { unique: true },
       foreignKey: true
     })
@@ -228,19 +220,21 @@ export const change = async (db: Migration, up: boolean) => {
     t.timestamp(name, options) // timestamp without time zone
     t.timestamptz(name, options) // timstamp with time zone
     t.binary(name, options) // postgres bytea type
+    t.binary(name, options) // postgres bytea type
+    t.json(name, options) // jsonB - not json! Because jsonb is what you want
     
     // adds FOREIGN KEY for already defined column
     t.foreignKey('table', {
       primaryKey: 'id', // column related table, id is default
-      foreignKey: 'tableName', // column in current table, [table]_id is default
-      toTable: 'relatedTableName', // for example, define author_id foreign key for table users
+      foreignKey: 'table_name', // column in current table, [table]_id is default
+      toTable: 'related_table_name', // for example, define author_id foreign key for table users
       index: true || { ...options } // create index
     })
     
     // Index:
-    t.index('singleColumn') // create index
+    t.index('single_column') // create index
     t.index(['column1', 'column2', 'column3']) // create index for multiple columns
-    t.index('hereAreOptions', {
+    t.index('here_are_options', {
       unique: true, // UNIQUE constraint
       length: 20, // argument of column: CREATE INDEX ... ON table (column(20))
       order: 'asc' || 'desc', // order of index: CREATE INDEX ... ON table (column ASC)
@@ -257,16 +251,16 @@ export const change = async (db: Migration, up: boolean) => {
   
   // Will create one_table_second_table ( one_table_id integer, second_table_id integer )
   db.createJoinTable('one_table', 'second_table', {
-    tableName: 'join_table_name', // by default sorted concatenation of table names
+    table_name: 'join_table_name', // by default sorted concatenation of table names
     columnOptions: options, // for both columns
     ...options, // options for createTable
   }, (t) => {
     // callback to define other columns
   })
   // for example:
-  db.createJoinTable('songs', 'users', { tableName: 'favorite_songs', foreignKey: true })
+  db.createJoinTable('songs', 'users', { table_name: 'favorite_songs', foreignKey: true })
   
-  db.changeTable('tableName', { comment: 'comment will be updated, null for removing' }, (t) => {
+  db.changeTable('table_name', { comment: 'comment will be updated, null for removing' }, (t) => {
     // for adding new columns all functions from createTable are available
     t.string('add_column') // add column on migrate, remove on rollback
     
@@ -284,11 +278,11 @@ export const change = async (db: Migration, up: boolean) => {
     
     t.remove('column', options) // remove column on migrate, add on rollback
     t.removeIndex('column', options) // remove index on migrate, add on rollback
-    t.removeForeignKey('tableName', options) // remove on migrate, add on rollback
+    t.removeForeignKey('table_name', options) // remove on migrate, add on rollback
   })
   
   // drop table on migrate, create on rollback
-  db.dropTable('tableName', options, (t) => {
+  db.dropTable('table_name', options, (t) => {
     // definition of table
   })
   

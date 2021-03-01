@@ -1,6 +1,6 @@
 {
   "name": "rake-db",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Postgresql migrations like in Ruby on Rails",
   "bin": {
     "rake-db": "dist/rake-db.js"
@@ -45,7 +45,6 @@
     "dotenv": "8.x",
     "enquirer": "^2.3.6",
     "pg-adapter": "^1.1.58",
-    "pluralize": "8.x",
     "ts-node": "^9.1.1"
   }
 }

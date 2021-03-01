@@ -1,4 +1,3 @@
-import { plural, singular } from 'pluralize'
 import { join } from '../utils'
 import {
   AddIndexFunction,
@@ -47,9 +46,6 @@ export const reference = (
   name: string,
   { type = 'integer', ...options }: ReferenceOptions = {},
 ) => {
-  table = plural(table)
-  name = singular(name)
-
   if (options.foreignKey === true) options = { ...options, foreignKey: {} }
   if (typeof options.foreignKey === 'string')
     options = { ...options, foreignKey: { column: options.foreignKey } }
@@ -57,7 +53,7 @@ export const reference = (
     if (!options.foreignKey.toTable)
       options = {
         ...options,
-        foreignKey: { ...options.foreignKey, toTable: plural(name) },
+        foreignKey: { ...options.foreignKey, toTable: name },
       }
 
   if (typeof options !== 'object')
@@ -86,11 +82,8 @@ export const addForeignKey = (
   name: string,
   options: ForeignKeyOptions = {},
 ) => {
-  table = plural(table)
-  name = singular(name)
-
   options = {
-    toTable: plural(name),
+    toTable: name,
     primaryKey: `id`,
     ...options,
   }

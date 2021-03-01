@@ -1,7 +1,6 @@
 import { Adapter, AdapterProps } from 'pg-adapter'
 import { CreateTable } from './schema/createTable'
 import { ChangeTable, ChangeTableCallback } from './schema/changeTable'
-import { plural, singular } from 'pluralize'
 import { noop, join } from './utils'
 import {
   Table,
@@ -22,10 +21,10 @@ const createTable = (
 ) => new CreateTable(name, db.reverse, options).__commit(db, fn)
 
 const dropTable = (db: Migration, name: string) =>
-  db.exec(`DROP TABLE "${plural(name)}" CASCADE`).catch(noop)
+  db.exec(`DROP TABLE "${name}" CASCADE`).catch(noop)
 
 const renameTable = (db: Migration, from: string, to: string) =>
-  db.exec(`ALTER TABLE "${plural(from)}" RENAME TO "${plural(to)}"`)
+  db.exec(`ALTER TABLE "${from}" RENAME TO "${to}"`)
 
 const createJoinTable = (
   db: Migration,
@@ -201,7 +200,7 @@ export default class Migration extends Adapter {
   ) {
     let name
     if (typeof options === 'string')
-      name = join(fromTable, singular(options), 'id', 'fkey')
+      name = join(fromTable, options, 'id', 'fkey')
     else name = options.name || join(fromTable, options.column, 'fkey')
 
     const value = this.value(
