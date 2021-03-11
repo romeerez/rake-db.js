@@ -72,7 +72,7 @@ export class ChangeTable extends Table {
     this.execute(removeColumn(`"${name}"`, type, options))
   }
 
-  removeIndex = (name: string, options: true | IndexOptions = {}) =>
+  removeIndex = (name: string | string[], options: true | IndexOptions = {}) =>
     this.indices.push([this.reverse, name, options])
 
   removeForeignKey = (name: string, options: ForeignKeyOptions) =>

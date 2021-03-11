@@ -31,7 +31,7 @@ export default class Table {
   reverse: boolean
   options: TableOptions
   lines: string[]
-  indices: [boolean, string, undefined | true | IndexOptions][]
+  indices: [boolean, string | string[], undefined | true | IndexOptions][]
   comments: [string, string][]
   addColumnSql!: (sql: string) => void
   constraint!: (name: string, sql?: string) => void
@@ -65,8 +65,8 @@ export default class Table {
       this.comments.push([name, options.comment as string])
   }
 
-  index = (name: string, options?: true | IndexOptions) => {
-    this.indices.push([!this.reverse, name, options])
+  index = (column: string | string[], options?: true | IndexOptions) => {
+    this.indices.push([!this.reverse, column, options])
   }
 
   timestamps = (options?: ColumnOptions) => timestamps(this.column, options)

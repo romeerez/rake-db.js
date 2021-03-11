@@ -3,15 +3,30 @@ import { IndexOptions } from '../../types'
 
 const getIndexName = (
   table: string,
-  name: string,
+  column: string | string[],
   options: true | IndexOptions = {},
 ) =>
   (options !== true && options.name) ||
-  join(table, Array.isArray(name) ? name[0] : name, 'index')
+  join(table, Array.isArray(column) ? column[0] : column, 'index')
+
+const getIndexColumns = (
+  table: string,
+  column: string | string[],
+  options: IndexOptions = {},
+): string => {
+  if (Array.isArray(column))
+    return column.map((col) => getIndexColumns(table, col, options)).join(', ')
+  else {
+    let sql = `"${column}"`
+    if (options.length) sql += `(${options.length})`
+    if (options.order) sql += ` ${options.order}`
+    return sql
+  }
+}
 
 export const addIndex = (
   table: string,
-  name: string,
+  column: string | string[],
   options: true | IndexOptions = {},
 ) => {
   if (options === true) options = {}
@@ -19,15 +34,12 @@ export const addIndex = (
   const sql = ['CREATE']
   if (options.unique) sql.push('UNIQUE')
   sql.push('INDEX')
-  const indexName = getIndexName(table, name, options)
+  const indexName = getIndexName(table, column, options)
   sql.push(`"${indexName}"`)
 
-  let inner = `"${name}"`
-  if (options.length) inner += `(${options.length})`
-  if (options.order) inner += ` ${options.order}`
   sql.push('ON', `"${table}"`)
   if (options.using) sql.push('USING', options.using)
-  sql.push(`(${inner})`)
+  sql.push(`(${getIndexColumns(table, column, options)})`)
   if (options.including)
     sql.push(
       'INCLUDING',
@@ -45,10 +57,10 @@ export const addIndex = (
 
 export const removeIndex = (
   table: string,
-  name: string,
+  column: string | string[],
   options: true | IndexOptions = {},
 ) => {
-  const sql = ['DROP INDEX', `"${getIndexName(table, name, options)}"`]
+  const sql = ['DROP INDEX', `"${getIndexName(table, column, options)}"`]
   let mode = options !== true && options.mode
   if (mode) {
     mode = mode.toUpperCase()

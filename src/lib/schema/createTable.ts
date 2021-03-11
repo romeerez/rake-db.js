@@ -27,8 +27,8 @@ export class CreateTable extends Table {
     db.exec(sql.join('')).catch(noop)
 
     for (const args of this.indices) {
-      const [create, name, options] = args
-      if (create) db.exec(addIndex(this.tableName, name, options)).catch(noop)
+      const [create, column, options] = args
+      if (create) db.exec(addIndex(this.tableName, column, options)).catch(noop)
     }
 
     this.addComments(db)
