@@ -7,7 +7,7 @@ const getIndexName = (
   options: true | IndexOptions = {},
 ) =>
   (options !== true && options.name) ||
-  join(table, Array.isArray(column) ? column[0] : column, 'index')
+  join(table, Array.isArray(column) ? join(...column) : column, 'index')
 
 const getIndexColumns = (
   table: string,
