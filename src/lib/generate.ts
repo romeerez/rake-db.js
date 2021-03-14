@@ -35,7 +35,7 @@ const generateFileContent = (name: string, args: string[]) => {
         } else if (command === 'change') {
           lines.push(`    t.change('${column}', up ? {type: '${type}'} : {?})`)
         } else if (command === 'remove') {
-          lines.push(`    t.remove('${column}', {type: '${type}'})`)
+          lines.push(`    t.drop('${column}', {type: '${type}'})`)
         }
       }
     })

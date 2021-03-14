@@ -1,33 +1,19 @@
 import { quote } from 'pg-adapter'
 import { addColumn, removeColumn } from './column'
-import { reference, addForeignKey } from './foreignKey'
 import timestamps from './timestamps'
 import { noop } from '../utils'
 import {
   Migration,
-  AddIndexFunction,
   ColumnFunction,
   ColumnOptions,
-  ForeignKeyOptions,
   IndexOptions,
-  ReferenceOptions,
   TableOptions,
   ColumnTypes,
   ColumnChain,
+  ForeignKey,
 } from '../../types'
-import { columnChain } from './columnChain'
-
-const reversableReference = (
-  reverse: boolean,
-  table: string,
-  column: ColumnFunction,
-  index: AddIndexFunction,
-  name: string,
-  options?: ReferenceOptions,
-) => {
-  if (reverse) reference(table, column, noop, name, options)
-  else reference(table, column, index, name, options)
-}
+import { columnChain } from './chain'
+import { foreignKey } from './foreignKey'
 
 type ColumnMethods = {
   [key in keyof typeof ColumnTypes]: (
@@ -40,11 +26,12 @@ export default class Table implements ColumnMethods {
   tableName: string
   reverse: boolean
   options: TableOptions
-  lines: string[][]
+  lines: (string | string[])[]
   indices: [boolean, string | string[], undefined | true | IndexOptions][]
   comments: [string, string][]
   addColumnSql!: (sql: string) => ColumnChain
   constraint!: (name: string, sql?: string) => void
+  removedColumns: string[] = []
 
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
     this.tableName = tableName
@@ -55,12 +42,13 @@ export default class Table implements ColumnMethods {
     this.comments = []
   }
 
-  execute(sql: string[]) {
+  execute(sql: string | string[]) {
     this.lines.push(sql)
   }
 
   column: ColumnFunction = (name, type, options = {}) => {
     if (this.reverse) {
+      this.removedColumns.push(name)
       const sql = [removeColumn(`"${name}"`)]
       this.execute(sql)
       return columnChain(sql, false)
@@ -82,33 +70,21 @@ export default class Table implements ColumnMethods {
   }
 
   index = (column: string | string[], options?: true | IndexOptions) => {
+    if (
+      this.reverse &&
+      (Array.isArray(column)
+        ? column.some((col) => this.removedColumns.includes(col))
+        : this.removedColumns.includes(column))
+    )
+      return
     this.indices.push([!this.reverse, column, options])
   }
 
   timestamps = (options?: ColumnOptions) => timestamps(this.column, options)
 
-  reference = (name: string, options?: ReferenceOptions) =>
-    reversableReference(
-      this.reverse,
-      this.tableName,
-      this.column,
-      this.index,
-      name,
-      options,
-    )
-
-  belongsTo = (name: string, options?: ReferenceOptions) =>
-    reversableReference(
-      this.reverse,
-      this.tableName,
-      this.column,
-      this.index,
-      name,
-      options,
-    )
-
-  foreignKey = (name: string, options?: ForeignKeyOptions) =>
-    addForeignKey(this.tableName, this.constraint, this.index, name, options)
+  foreignKey: ForeignKey = (params) => {
+    foreignKey('createTable', this, this.reverse, params)
+  }
 
   addComments = (db: Migration) => {
     if (this.reverse) return

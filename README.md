@@ -12,6 +12,13 @@ Can create, drop, migrate and rollback database, and can generate migrations.
 
 Has an option to generate names of columns, indices and foreign keys in camelCase.
 
+## Table of Contents
+* [Get started](#get-started)
+* [Commands](#commands)
+* [Versioning](#versioning)
+* [Up and down and change](#migration-directions)
+* [All methods and options](#all-methods-and-options)
+
 ## Get started
 
 Add a script into `package.json`:
@@ -120,7 +127,7 @@ export const change = (db: Migration, up: boolean) => {
 ```
 
 `db` argument inherited from [pg-adapter](https://www.npmjs.com/package/pg-adapter) instance,
-so it has all methods which `pg-adapter` library has, it can make queries.
+so it has all methods which `pg-adapter` library has, can perform queries.
 
 Second argument `up` is boolean which is true for migrate and `false` for rollback.
 
@@ -155,162 +162,310 @@ You can define `export const up` for migrate, `export const down` for rollback o
 
 ## All methods and options
 
+In all further examples `db` is a first argument of `change` or `up` or `down`:
 ```js
 import { Migration } from 'rake-db'
 
-export const change = async (db: Migration, up: boolean) => {
-  // createTable will drop it on rollback
-  db.createTable('table_name') // create table with single id column
-  db.createTable('table_name', { id: false }) // don't create id column
-  
-  // comment is a database feature, this will create table with comment
-  db.createTable('table_name', { comment: 'what is this table for', id: false }, (t) => { 
-    t.column('column_name', { type: 'custom_type' }) // create column with custom type
-    
-    // Other column options:
-    // if you want bigint id set id to false in createTable and use primaryKey: option
-    t.bigserial('id', { primaryKey: true })
-    t.date('some_required_timestamp', {
-      null: false, // add NOT NULL constraint
-      default: 'now()', // default accepts plain sql
-      comment: 'what is this column for', // db comment for column
-    })
-    t.string('string', { default: db.quote('string') }) // to escape values
-    
-    t.integer('other_table_id', {
-      index: true, // add simple index
-      // index can accept options instead of true, all options see below:
-      index: { unique: true, name: 'custom_index_name' },
-      
-      foreignKey: true, // add FOREIGN KEY constraint
-      // foreignKey also can accept options, all options see below:
-      foreignKey: {
-        toTable: 'other_table_name'
-      }
-    })
-    
-    t.reference('table') // same as t.integer('table_id"), it doesn't put any restrictions! I guess I will have to change this behaviour
-    
-    // This will create:
-    // - table_id bigint
-    // - unique index
-    // - a foreign key
-    t.reference('table', {
-      type: 'bigint',
-      index: { unique: true },
-      foreignKey: true
-    })
-    
-    t.belongsTo('table') // alias to reference
-    
-    // All shortcuts for column of specific type:
-    t.boolean(name, options) // true or false
-    t.smallint(name, options) // integer -32768 .. +32767
-    t.integer(name, options) // integer -2147483648 .. +2147483647
-    t.bigint(name, options) // integer -9223372036854775808 .. 9223372036854775807
-    t.smallserial(name, options) // auto incrementing smallint
-    t.serial(name, options) // auto incrementing integer
-    t.bigserial(name, options) // auto incrementing bigint
-    t.date(name, options) // postgres date type
-    t.decimal(name, options) // postgres decimal type aka numeric
-    t.float(name, options) // postgres float8 type
-    t.text(name, options) // just text
-    t.string(name, options) // text alias
-    t.time(name, options) // postgres time type
-    t.timestamp(name, options) // timestamp without time zone
-    t.timestamptz(name, options) // timstamp with time zone
-    t.binary(name, options) // postgres bytea type
-    t.binary(name, options) // postgres bytea type
-    t.json(name, options) // jsonB - not json! Because jsonb is what you want
-    
-    // adds FOREIGN KEY for already defined column
-    t.foreignKey('table', {
-      primaryKey: 'id', // column related table, id is default
-      foreignKey: 'table_name', // column in current table, [table]_id is default
-      toTable: 'related_table_name', // for example, define author_id foreign key for table users
-      index: true || { ...options } // create index
-    })
-    
-    // Index:
-    t.index('single_column') // create index
-    t.index(['column1', 'column2', 'column3']) // create index for multiple columns
-    t.index('here_are_options', {
-      unique: true, // UNIQUE constraint
-      length: 20, // argument of column: CREATE INDEX ... ON table (column(20))
-      order: 'asc' || 'desc', // order of index: CREATE INDEX ... ON table (column ASC)
-      including: 'column' || ['column1', 'column2'], // allows to include columns for performance
-      where: 'sql', // conditions
-      tablespace: 'name', // advanced, see postgres docs for TABLESPASE
-      with: 'string', // advanced, see postgres docs for WITH statement
-    })
-    
-    t.execute('sql') // append custom sql into table definition query
-    
-    t.timestamps() // add created_at and updated_at, both with now() as default
-  })
-  
-  // Will create one_table_second_table ( one_table_id integer, second_table_id integer )
-  db.createJoinTable('one_table', 'second_table', {
-    table_name: 'join_table_name', // by default sorted concatenation of table names
-    columnOptions: options, // for both columns
-    ...options, // options for createTable
-  }, (t) => {
-    // callback to define other columns
-  })
-  // for example:
-  db.createJoinTable('songs', 'users', { table_name: 'favorite_songs', foreignKey: true })
-  
-  db.changeTable('table_name', { comment: 'comment will be updated, null for removing' }, (t) => {
-    // for adding new columns all functions from createTable are available
-    t.string('add_column') // add column on migrate, remove on rollback
-    
-    t.change('column', {
-      type: 'new_type', // change column type
-      null: true, // change NOT NULL constraint
-      default: 'value', // change default
-      index: true, // add index on migrate, remove on rollback
-      comment: 'change column comment', // irreversible, but won't fail on rollback
-    })
-    
-    t.comment('column', 'message') // change column comment
-    t.default('column', 'value') // change column default
-    t.null('column', true || false) // change column NOT NULL constraint
-    
-    t.remove('column', options) // remove column on migrate, add on rollback
-    t.removeIndex('column', options) // remove index on migrate, add on rollback
-    t.removeForeignKey('table_name', options) // remove on migrate, add on rollback
-  })
-  
-  // drop table on migrate, create on rollback
-  db.dropTable('table_name', options, (t) => {
-    // definition of table
-  })
-  
-  db.renameTable('current_name', 'new_name')
-  
-  // for join table:
-  db.dropJoinTable('first_table', 'second_table', options, (t) => {})
-  
-  // for options see similar functions above
-  db.addBelongsTo('table', 'related_table', options)
-  db.addColumn('table', 'name', options)
-  db.addForeignKey('table', 'name', options)
-  db.addIndex('table', 'name', options)
-  db.addReference('table', 'name', options)
-  db.addTimestamps('table', 'name', options)
-  db.changeColumn('table', 'name', options)
-  db.changeColumnComment('table', 'name', 'comment')
-  db.changeColumnDefault('table', 'name', 'value')
-  db.changeColumnNull('table', 'name', true || false)
-  db.changeTableComment('table', 'comment')
-  
-  // I forgot to implement these two:
-  db.renameTable('table', 'new_name')
-  db.renameColumn('table', 'column', 'new_name')
-  
-  // check for db structure
-  let bool = await db.columnExists('table', 'column')
-  bool = await db.tableExists('table')
-  bool = await db.foreignKeyExists('table', 'foreign_key_name') // name is table_column_fkey by default
+export const change = (db: Migration, up: boolean) => {
 }
+// or
+export const up = (db: Migration) => {
+}
+// or
+export const down = (db: Migration) => {
+}
+```
+
+### Create table
+
+```js
+db.createTable(
+  'table_name',
+  { // optional parameters
+    id: false, // skip id column which is created by default
+    comment: 'table comment', // add comment to table
+  },
+  (t) => {
+    // See "Add column" for details
+    t.column('column_name', 'column_type')
+
+    // column is chainable with methods:
+    t.column('name')
+      .required() // NOT NULL
+      .default('value') // set default value
+      .references('table', 'column') // add REFERENCES statement
+      .onUpdate('cascade') // ON UPDATE for REFERENCES
+      .onDelete('cascade') // ON DELETE for REFERENCES
+
+    // See "Add index"
+    t.index('column_name', { unique: true })
+
+    // See "Add timestamps"
+    t.timestamps()
+
+    // See "Add foreign key"
+    t.foreignKey({
+      table: 'some',
+      column: 'some_id',
+      references: 'id'
+    })
+
+    t.execute('custom sql inside of CREATE TABLE ()')
+
+    // type helpers, the same as t.column(name, *type*, options)
+    t.bigint('column_name', ColumnOptions)
+    t.bigserial('column_name', ColumnOptions)
+    t.boolean('column_name', ColumnOptions)
+    t.date('column_name', ColumnOptions)
+    t.decimal('column_name', ColumnOptions)
+    t.float('column_name', ColumnOptions)
+    t.integer('column_name', ColumnOptions)
+    t.text('column_name', ColumnOptions)
+    t.smallint('column_name', ColumnOptions)
+    t.string('column_name', ColumnOptions)
+    t.time('column_name', ColumnOptions)
+    t.timestamp('column_name', ColumnOptions)
+    t.timestamptz('column_name', ColumnOptions)
+    t.binary('column_name', ColumnOptions)
+    t.serial('column_name', ColumnOptions)
+    t.json('column_name', ColumnOptions)
+    t.jsonb('column_name', ColumnOptions)
+  },
+)
+```
+
+### Create join table
+
+If you prefer plural table names skip this section, as this method not supports it for now.
+
+```js
+db.createJoinTable(
+  'orange',
+  'apple',
+  { // optional parameters
+    // by default table name will be sorted join of two table names, i.e "apples_oranges"
+    tableName: string,
+    // by default true, will add index to ensure unique id pairs
+    unique: boolean,
+    // by default is true, will set REFERENCES for both columns
+    references: boolean,
+    columnOptions: {
+      // by default id columns are NOT NULL
+      null: boolean,
+      // if set to true will create index for each column
+      index: boolean
+      // you can provide and other column options too
+    },
+  },
+  (t) => { // optional callback with same methods as in createTable
+  }
+)
+```
+
+Example:
+```js
+db.createJoinTable('orange', 'apple')
+```
+Will result in such sql:
+```sql
+CREATE TABLE "apple_orange" (
+  "apple_id" integer NOT NULL REFERENCES "apple" ("id"),
+  "orange_id" integer NOT NULL REFERENCES "orange" ("id")
+);
+CREATE UNIQUE INDEX "apple_orange_unique_index" ON "apple_orange" ("apple_id", "orange_id");
+```
+
+### Change table
+
+```js
+db.changeTable('table_name', (t) => {
+  // adding new column, index, foreign key - all the same as in createTable
+  t.column('name', 'type')
+
+  t.change('column_name', {
+    type: 'integer', // change column type
+    default: 42, // set new default
+    default: null, // remove default
+    null: false, // set NOT NULL
+    index: true | IndexOptions, // add index for column, for options see "Add index"
+    comment: 'column comment', // add comment
+  })
+
+  t.rename('old_column_name', 'new_column_name') // rename column
+
+  t.comment('column_name', 'comment') // add comment to the column
+
+  t.default('column_name', 'new default value') // change default value
+  t.default('column_name', null) // remove default value
+
+  t.drop('column_name', 'type', ColumnOptions) // drop column, type and options are for rolling back
+
+  t.dropIndex('index_name', IndexOptions) // drop index, see "Add index" for options
+
+  t.dropForeignKey(ForeignKeyOptions) // drop foreign key, see "Add foreign key" for options
+})
+```
+
+### Drop table
+
+```js
+db.dropTable('table_name')
+
+// to make migration reversible provide the same callback as for createTable:
+db.dropTable('table_name', (t) => {
+  t.string('column')
+})
+```
+
+### Drop join table
+
+```js
+// the same parameters as in addJoinTable
+db.dropJoinTable('apple', 'orange')
+```
+
+### Rename table
+
+```js
+db.renameTable('old_name', 'new_name')
+```
+
+### Change table comment
+
+Looks like this method is irreversible, but who use comments at all? :)
+```js
+db.changeTableComment('table_name', 'new table comment')
+```
+
+### Table exists
+
+```js
+if (await !db.tableExists('table')) {
+  await db.createTable('table')
+}
+```
+
+### Add column
+
+```js
+db.addColumn('table', 'column_name', 'type', {
+  // all fields are optional
+  primaryKey: boolean, // if column should be a primary key
+  default: 'default value', // set default
+  null: false, // add NOT NULL statement
+  index: boolean | IndexOptions // add index for the column, for options see "Add index"
+  comment: string, // add comment on the column
+  mode: string, // RESTRICT or CASCADE to use in rollback
+  unique: boolean, // add unique index
+  length: number | string, // specify type size, for varchar for example
+  precision: number | string, // for numeric
+  scale: number | string, // for numeric
+  collate: string, // for completeness, see COLLATE in postgres docs
+  using: string, // for completeness as well
+})
+```
+
+### Change column
+
+```js
+db.changeColumn('table_name', 'column_name', {
+  type: 'integer', // change column type
+  default: 42, // set new default
+  default: null, // remove default
+  null: false, // set NOT NULL
+  index: true | IndexOptions, // add index for column, for options see "Add index"
+  comment: 'column comment', // add comment
+})
+```
+
+### Change column default
+
+```js
+db.changeColumnDefault('table', 'column', 'new default value')
+db.changeColumnDefault('table', 'column', null) // to remove default
+```
+
+### Change column null
+
+```js
+db.changeColumnNull('table', 'column', boolean) // true for NOT NULL
+```
+
+### Change column comment
+
+```js
+db.changeColumnComment('table', 'column', 'comment')
+```
+
+### Rename column
+
+```js
+db.renameColumn('table', 'old_column_name', 'new_column_name')
+```
+
+### Column exists
+
+```js
+if (!db.columnExists('table', 'column'))
+  db.addColumn('table', 'column', 'type')
+```
+
+### Add timestamps
+
+This will add `updated_at` and `created_at`, both with default 'now()'
+
+```js
+db.addTimestamps('table', options) // See "Add column" for options
+```
+
+### Drop timestamps
+
+```js
+db.dropTimestamps('table', options)
+```
+
+### Add foreign key
+
+```js
+db.addForeignKey('table', {
+  // required
+  column: 'some_id', // a foreign key column
+  table: 'other_table', // table to connect this column to
+  references: 'column_in_other_table', // column in other table to connect
+
+  // optional
+  name: 'custom_fkey_name', // custom name of constraint
+  onUpdate: 'CASCADE', // action to perform on update
+  onDelete: 'CASCADE', // action to perform on delete
+  index: true | IndexOptions // add index on the column
+})
+```
+
+### Drop foreign key
+
+```js
+db.dropForeignKey('table', ForeignKeyOptions)
+```
+
+### Add index
+
+```js
+db.addIndex('table', 'column', {
+  name: string, // index name
+  unique: boolean, // whether the index should be unique
+  expression: number | string, // for this syntax: CREATE INDEX name ON table ( column( expression ) )
+  order: string, // index order: ASC, DESC, NULLS FIRST/LAST
+  using: string, // index method
+  including: string, // for INCLUDING statement
+  with: string, // for WITH statement
+  tablespace: string, // for TABLESPACE
+  where: string, // filter rows for the index with query
+  mode: string, // RESTRICT | CASCADE for rollback
+})
+```
+
+### Drop index
+
+```js
+db.dropIndex('table', 'column', options)
 ```

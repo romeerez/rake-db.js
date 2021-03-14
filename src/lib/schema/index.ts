@@ -18,7 +18,7 @@ const getIndexColumns = (
     return column.map((col) => getIndexColumns(table, col, options)).join(', ')
   else {
     let sql = `"${column}"`
-    if (options.length) sql += `(${options.length})`
+    if (options.expression) sql += `(${options.expression})`
     if (options.order) sql += ` ${options.order}`
     return sql
   }
@@ -55,7 +55,7 @@ export const addIndex = (
   return sql.join(' ')
 }
 
-export const removeIndex = (
+export const dropIndex = (
   table: string,
   column: string | string[],
   options: true | IndexOptions = {},

@@ -2,7 +2,7 @@ import Table from './table'
 import { addIndex } from './index'
 import { noop } from '../utils'
 import { Migration, TableCallback, TableOptions } from '../../types'
-import { columnChain } from './columnChain'
+import { columnChain } from './chain'
 
 export class CreateTable extends Table {
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
@@ -29,7 +29,10 @@ export class CreateTable extends Table {
     sql.push(`CREATE TABLE "${this.tableName}" (`)
     sql.push(
       this.lines.length
-        ? '\n  ' + this.lines.map((arr) => arr.join(' ')).join(',\n  ')
+        ? '\n  ' +
+            this.lines
+              .map((arr) => (Array.isArray(arr) ? arr.join(' ') : arr))
+              .join(',\n  ')
         : '',
     )
     sql.push('\n)')

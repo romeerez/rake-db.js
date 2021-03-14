@@ -11,9 +11,23 @@ export type TableOptions = {
 
 export type JoinTableOptions = TableOptions & {
   tableName?: string
+  unique?: boolean
+  references?: boolean
   columnOptions?: ColumnOptions
   options?: TableOptions
 }
+
+export type ForeignKeyOptions = {
+  name?: string
+  table: string
+  column: string | string[]
+  references: string | string[]
+  onUpdate?: OnUpdateOrDeleteAction
+  onDelete?: OnUpdateOrDeleteAction
+  index?: true | IndexOptions
+}
+
+export type ForeignKey = (params: ForeignKeyOptions) => void
 
 export type ColumnOptions = {
   primaryKey?: boolean
@@ -22,7 +36,6 @@ export type ColumnOptions = {
   null?: boolean
   index?: boolean | IndexOptions
   comment?: string
-  foreignKey?: ForeignKeyOptions
   mode?: string
   unique?: boolean
   length?: number | string
@@ -30,32 +43,14 @@ export type ColumnOptions = {
   scale?: number | string
   collate?: string
   using?: string
-  reference?: boolean
 }
 
 export type TableCallback = (t: Table) => void
 
-export type ReferenceOptions = {
-  type?: string
-  foreignKey?: boolean | string | ForeignKeyOptions
-  index?: boolean | IndexOptions
-}
-
-export type ForeignKeyOptions = {
-  name?: string
-  column?: string
-  toTable?: string
-  primaryKey?: string
-  foreignKey?: string
-  onUpdate?: keyof typeof IndexOnCallback
-  onDelete?: keyof typeof IndexOnCallback
-  index?: boolean | IndexOptions
-}
-
 export type IndexOptions = {
   name?: string
   unique?: boolean
-  length?: number | string
+  expression?: number | string
   order?: string
   using?: string
   including?: string | string[]
@@ -75,8 +70,6 @@ export type ColumnFunction = (
   type: string,
   options?: ColumnOptions,
 ) => ColumnChain
-
-export type ConstraintFunction = (name: string, sql?: string) => void
 
 export const ColumnTypes = {
   bigint: 'bigint',
@@ -99,7 +92,7 @@ export const ColumnTypes = {
   jsonb: 'jsonb',
 } as const
 
-export enum IndexOnCallback {
+export enum OnCallback {
   noAction = 'NO ACTION',
   restrict = 'RESTRICT',
   cascade = 'CASCADE',
@@ -108,8 +101,31 @@ export enum IndexOnCallback {
   setDefault = 'SET DEFAULT',
 }
 
+export type OnUpdateOrDeleteAction =
+  | 'NO ACTION'
+  | 'no action'
+  | 'RESTRICT'
+  | 'restrict'
+  | 'CASCADE'
+  | 'cascade'
+  | 'SET NULL'
+  | 'set null'
+  | 'SET DEFAULT'
+  | 'set default'
+
 export type ColumnChain = {
   required(): ColumnChain
   // eslint-disable-next-line
   default(value: any): ColumnChain
+  references(table: string): ReferencesChain
+  references(
+    table: string,
+    column: string,
+  ): Pick<ReferencesChain, 'onUpdate' | 'onDelete'>
+}
+
+export type ReferencesChain = {
+  column(column: string): Pick<ReferencesChain, 'onUpdate' | 'onDelete'>
+  onUpdate(action: OnUpdateOrDeleteAction): Pick<ReferencesChain, 'onDelete'>
+  onDelete(action: OnUpdateOrDeleteAction): Pick<ReferencesChain, 'onUpdate'>
 }

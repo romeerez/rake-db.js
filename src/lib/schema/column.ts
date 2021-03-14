@@ -1,5 +1,4 @@
 import typeSql from './typeSql'
-import { references } from './foreignKey'
 import { ColumnOptions } from '../../types'
 
 const columnOptions = (options: ColumnOptions = {}) => {
@@ -29,11 +28,7 @@ export const addColumn = (
   type: string,
   options: ColumnOptions = {},
 ) => {
-  let sql = column(name, type, options)
-
-  if (options.foreignKey) sql += ' ' + references(options.foreignKey)
-
-  return sql
+  return column(name, type, options)
 }
 
 export const removeColumn = (

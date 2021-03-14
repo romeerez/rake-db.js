@@ -1,16 +1,11 @@
 import Table from './table'
 import typeSql from './typeSql'
-import { addIndex, removeIndex } from './index'
+import { addIndex, dropIndex } from './index'
 import { addColumn, removeColumn } from './column'
-import { addForeignKey } from './foreignKey'
 import { noop } from '../utils'
-import {
-  Migration,
-  ColumnOptions,
-  ForeignKeyOptions,
-  IndexOptions,
-} from '../../types'
-import { columnChain } from './columnChain'
+import { Migration, ColumnOptions, IndexOptions, ForeignKey } from '../../types'
+import { columnChain } from './chain'
+import { foreignKey } from './foreignKey'
 
 const addConstraint = (name: string, sql?: string) =>
   `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
@@ -37,6 +32,12 @@ export class ChangeTable extends Table {
       this.reverse ? addConstraint(name, sql) : removeConstraint(name),
     ])
 
+  dropTimestamps = (options?: ColumnOptions) => {
+    this.reverse = !this.reverse
+    this.timestamps(options)
+    this.reverse = !this.reverse
+  }
+
   alterColumn = (name: string, sql: string) =>
     this.execute([`ALTER COLUMN "${name}" ${sql}`])
 
@@ -52,7 +53,7 @@ export class ChangeTable extends Table {
       this.alterColumn(name, `SET DEFAULT ${options.default}`)
     if (options.null !== undefined) this.null(name, options.null)
     if (options.index) this.index(name, options.index)
-    else if (options.index === false) this.removeIndex(name, options)
+    else if (options.index === false) this.dropIndex(name, options)
     if ('comment' in options && options.comment)
       this.comments.push([name, options.comment])
 
@@ -77,23 +78,22 @@ export class ChangeTable extends Table {
   null = (column: string, value: boolean) =>
     this.alterColumn(column, value ? 'DROP NOT NULL' : 'SET NOT NULL')
 
-  remove = (name: string, type: string, options?: ColumnOptions) => {
+  drop = (name: string, type: string, options?: ColumnOptions) => {
     if (this.reverse)
       return this.addColumnSql(addColumn(`"${name}"`, type, options))
     this.execute([removeColumn(`"${name}"`, type, options)])
   }
 
-  removeIndex = (name: string | string[], options: true | IndexOptions = {}) =>
+  dropIndex = (name: string | string[], options: true | IndexOptions = {}) =>
     this.indices.push([this.reverse, name, options])
 
-  removeForeignKey = (name: string, options: ForeignKeyOptions) =>
-    addForeignKey(
-      this.tableName,
-      this.removeConstraint,
-      this.removeIndex,
-      name,
-      options,
-    )
+  foreignKey: ForeignKey = (params) => {
+    foreignKey('changeTable', this, this.reverse, params)
+  }
+
+  dropForeignKey: ForeignKey = (params) => {
+    foreignKey('changeTable', this, !this.reverse, params)
+  }
 
   __commit = (db: Migration, fn?: ChangeTableCallback) => {
     this.reverse = db.reverse
@@ -102,14 +102,18 @@ export class ChangeTable extends Table {
 
     if (this.lines.length) {
       let sql = `ALTER TABLE "${this.tableName}"`
-      sql += '\n' + this.lines.map((arr) => arr.join(' ')).join(',\n')
+      sql +=
+        '\n' +
+        this.lines
+          .map((arr) => (Array.isArray(arr) ? arr.join(' ') : arr))
+          .join(',\n')
       db.exec(sql).catch(noop)
     }
 
     for (const args of this.indices) {
       const [create, name, options] = args
       if (create) db.exec(addIndex(this.tableName, name, options)).catch(noop)
-      else db.exec(removeIndex(this.tableName, name, options)).catch(noop)
+      else db.exec(dropIndex(this.tableName, name, options)).catch(noop)
     }
 
     this.addComments(db)
