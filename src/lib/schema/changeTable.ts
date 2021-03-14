@@ -10,6 +10,7 @@ import {
   ForeignKeyOptions,
   IndexOptions,
 } from '../../types'
+import { columnChain } from './columnChain'
 
 const addConstraint = (name: string, sql?: string) =>
   `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
@@ -19,21 +20,25 @@ const removeConstraint = (name: string) => `DROP CONSTRAINT "${name}"`
 export type ChangeTableCallback = (t: ChangeTable) => void
 
 export class ChangeTable extends Table {
-  addColumnSql = (sql: string) => this.execute(`ADD COLUMN ${sql}`)
+  addColumnSql = (sql: string) => {
+    const query = [`ADD COLUMN ${sql}`]
+    this.execute(query)
+    return columnChain(query, !this.reverse)
+  }
 
   constraint = (name: string, sql?: string) => {
-    this.execute(
+    this.execute([
       this.reverse ? removeConstraint(name) : addConstraint(name, sql),
-    )
+    ])
   }
 
   removeConstraint = (name: string, sql?: string) =>
-    this.execute(
+    this.execute([
       this.reverse ? addConstraint(name, sql) : removeConstraint(name),
-    )
+    ])
 
   alterColumn = (name: string, sql: string) =>
-    this.execute(`ALTER COLUMN "${name}" ${sql}`)
+    this.execute([`ALTER COLUMN "${name}" ${sql}`])
 
   change = (name: string, options: ColumnOptions) => {
     const { reverse } = this
@@ -54,6 +59,12 @@ export class ChangeTable extends Table {
     this.reverse = reverse
   }
 
+  rename = (from: string, to: string) => {
+    const f = this.reverse ? to : from
+    const t = this.reverse ? from : to
+    this.execute([`RENAME COLUMN "${f}" TO "${t}"`])
+  }
+
   comment = (column: string, message: string) =>
     this.comments.push([column, message])
 
@@ -69,7 +80,7 @@ export class ChangeTable extends Table {
   remove = (name: string, type: string, options?: ColumnOptions) => {
     if (this.reverse)
       return this.addColumnSql(addColumn(`"${name}"`, type, options))
-    this.execute(removeColumn(`"${name}"`, type, options))
+    this.execute([removeColumn(`"${name}"`, type, options)])
   }
 
   removeIndex = (name: string | string[], options: true | IndexOptions = {}) =>
@@ -91,7 +102,7 @@ export class ChangeTable extends Table {
 
     if (this.lines.length) {
       let sql = `ALTER TABLE "${this.tableName}"`
-      sql += '\n' + this.lines.join(',\n')
+      sql += '\n' + this.lines.map((arr) => arr.join(' ')).join(',\n')
       db.exec(sql).catch(noop)
     }
 

@@ -6,7 +6,7 @@ const columnOptions = (options: ColumnOptions = {}) => {
   const sql = []
   if (options.primaryKey) sql.push('PRIMARY KEY')
   if (options.null === false) sql.push('NOT NULL')
-  if (options.default) sql.push('DEFAULT', options.default)
+  if (options.default !== undefined) sql.push(`DEFAULT ${options.default}`)
   return sql.join(' ')
 }
 

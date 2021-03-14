@@ -165,6 +165,10 @@ export default class Migration extends Adapter {
     this.changeTable(table, { comment })
   }
 
+  renameColumn(table: string, from: string, to: string) {
+    this.changeTable(table, (t) => t.rename(from, to))
+  }
+
   columnExists(table: string, column: string) {
     const value = this.value(
       'SELECT 1 FROM "information_schema"."columns" ' +

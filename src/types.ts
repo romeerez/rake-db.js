@@ -4,31 +4,18 @@ import { Value } from 'pg-adapter/dist/lib/quote'
 
 export { Migration, Table }
 
-export interface DbConfig {
-  url?: string
-  database?: string
-  host?: string
-  port?: number
-  user?: string
-  password?: string
-}
-
-export interface DbConfigs {
-  [key: string]: DbConfig
-}
-
-export interface TableOptions {
+export type TableOptions = {
   id?: boolean
   comment?: string
 }
 
-export interface JoinTableOptions extends TableOptions {
+export type JoinTableOptions = TableOptions & {
   tableName?: string
   columnOptions?: ColumnOptions
   options?: TableOptions
 }
 
-export interface ColumnOptions {
+export type ColumnOptions = {
   primaryKey?: boolean
   type?: string
   default?: Value
@@ -48,13 +35,13 @@ export interface ColumnOptions {
 
 export type TableCallback = (t: Table) => void
 
-export interface ReferenceOptions {
+export type ReferenceOptions = {
   type?: string
   foreignKey?: boolean | string | ForeignKeyOptions
   index?: boolean | IndexOptions
 }
 
-export interface ForeignKeyOptions {
+export type ForeignKeyOptions = {
   name?: string
   column?: string
   toTable?: string
@@ -65,7 +52,7 @@ export interface ForeignKeyOptions {
   index?: boolean | IndexOptions
 }
 
-export interface IndexOptions {
+export type IndexOptions = {
   name?: string
   unique?: boolean
   length?: number | string
@@ -87,28 +74,30 @@ export type ColumnFunction = (
   name: string,
   type: string,
   options?: ColumnOptions,
-) => void
+) => ColumnChain
 
 export type ConstraintFunction = (name: string, sql?: string) => void
 
-export enum ColumnTypes {
-  bigint = 'bigint',
-  bigserial = 'bigserial',
-  boolean = 'boolean',
-  date = 'date',
-  decimal = 'decimal',
-  float = 'float8',
-  integer = 'integer',
-  text = 'text',
-  smallint = 'smallint',
-  smallserial = 'smallserial',
-  string = 'text',
-  time = 'time',
-  timestamp = 'timestamp',
-  timestamptz = 'timestamptz',
-  binary = 'bytea',
-  serial = 'serial',
-}
+export const ColumnTypes = {
+  bigint: 'bigint',
+  bigserial: 'bigserial',
+  boolean: 'boolean',
+  date: 'date',
+  decimal: 'decimal',
+  float: 'float8',
+  integer: 'integer',
+  text: 'text',
+  smallint: 'smallint',
+  smallserial: 'smallserial',
+  string: 'text',
+  time: 'time',
+  timestamp: 'timestamp',
+  timestamptz: 'timestamptz',
+  binary: 'bytea',
+  serial: 'serial',
+  json: 'json',
+  jsonb: 'jsonb',
+} as const
 
 export enum IndexOnCallback {
   noAction = 'NO ACTION',
@@ -117,4 +106,10 @@ export enum IndexOnCallback {
   setNull = 'SET NULL',
   nullify = 'SET NULL',
   setDefault = 'SET DEFAULT',
+}
+
+export type ColumnChain = {
+  required(): ColumnChain
+  // eslint-disable-next-line
+  default(value: any): ColumnChain
 }

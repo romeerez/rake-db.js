@@ -12,7 +12,10 @@ import {
   IndexOptions,
   ReferenceOptions,
   TableOptions,
+  ColumnTypes,
+  ColumnChain,
 } from '../../types'
+import { columnChain } from './columnChain'
 
 const reversableReference = (
   reverse: boolean,
@@ -26,14 +29,21 @@ const reversableReference = (
   else reference(table, column, index, name, options)
 }
 
-export default class Table {
+type ColumnMethods = {
+  [key in keyof typeof ColumnTypes]: (
+    name: string,
+    options?: ColumnOptions,
+  ) => void
+}
+
+export default class Table implements ColumnMethods {
   tableName: string
   reverse: boolean
   options: TableOptions
-  lines: string[]
+  lines: string[][]
   indices: [boolean, string | string[], undefined | true | IndexOptions][]
   comments: [string, string][]
-  addColumnSql!: (sql: string) => void
+  addColumnSql!: (sql: string) => ColumnChain
   constraint!: (name: string, sql?: string) => void
 
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
@@ -45,14 +55,18 @@ export default class Table {
     this.comments = []
   }
 
-  execute(sql: string) {
+  execute(sql: string[]) {
     this.lines.push(sql)
   }
 
   column: ColumnFunction = (name, type, options = {}) => {
-    if (this.reverse) return this.execute(removeColumn(`"${name}"`))
+    if (this.reverse) {
+      const sql = [removeColumn(`"${name}"`)]
+      this.execute(sql)
+      return columnChain(sql, false)
+    }
 
-    this.addColumnSql(addColumn(`"${name}"`, type, options))
+    const chain = this.addColumnSql(addColumn(`"${name}"`, type, options))
 
     if (options.unique)
       if (options.index === true || !options.index)
@@ -63,6 +77,8 @@ export default class Table {
 
     if ('comment' in options)
       this.comments.push([name, options.comment as string])
+
+    return chain
   }
 
   index = (column: string | string[], options?: true | IndexOptions) => {
@@ -109,70 +125,74 @@ export default class Table {
   }
 
   bigint(name: string, options?: ColumnOptions) {
-    this.column(name, 'bigint', options)
+    return this.column(name, 'bigint', options)
   }
 
   bigserial(name: string, options?: ColumnOptions) {
-    this.column(name, 'bigserial', options)
+    return this.column(name, 'bigserial', options)
   }
 
   boolean(name: string, options?: ColumnOptions) {
-    this.column(name, 'boolean', options)
+    return this.column(name, 'boolean', options)
   }
 
   date(name: string, options?: ColumnOptions) {
-    this.column(name, 'date', options)
+    return this.column(name, 'date', options)
   }
 
   decimal(name: string, options?: ColumnOptions) {
-    this.column(name, 'decimal', options)
+    return this.column(name, 'decimal', options)
   }
 
   float(name: string, options?: ColumnOptions) {
-    this.column(name, 'float8', options)
+    return this.column(name, 'float8', options)
   }
 
   integer(name: string, options?: ColumnOptions) {
-    this.column(name, 'integer', options)
+    return this.column(name, 'integer', options)
   }
 
   text(name: string, options?: ColumnOptions) {
-    this.column(name, 'text', options)
+    return this.column(name, 'text', options)
   }
 
   smallint(name: string, options?: ColumnOptions) {
-    this.column(name, 'smallint', options)
+    return this.column(name, 'smallint', options)
   }
 
   smallserial(name: string, options?: ColumnOptions) {
-    this.column(name, 'smallserial', options)
+    return this.column(name, 'smallserial', options)
   }
 
   string(name: string, options?: ColumnOptions) {
-    this.column(name, 'text', options)
+    return this.column(name, 'text', options)
   }
 
   time(name: string, options?: ColumnOptions) {
-    this.column(name, 'time', options)
+    return this.column(name, 'time', options)
   }
 
   timestamp(name: string, options?: ColumnOptions) {
-    this.column(name, 'timestamp', options)
+    return this.column(name, 'timestamp', options)
   }
 
   timestamptz(name: string, options?: ColumnOptions) {
-    this.column(name, 'timestamptz', options)
+    return this.column(name, 'timestamptz', options)
   }
 
   binary(name: string, options?: ColumnOptions) {
-    this.column(name, 'bytea', options)
+    return this.column(name, 'bytea', options)
   }
 
   serial(name: string, options?: ColumnOptions) {
-    this.column(name, 'serial', options)
+    return this.column(name, 'serial', options)
   }
 
   json(name: string, options?: ColumnOptions) {
-    this.column(name, 'jsonb', options)
+    return this.column(name, 'json', options)
+  }
+
+  jsonb(name: string, options?: ColumnOptions) {
+    return this.column(name, 'jsonb', options)
   }
 }
