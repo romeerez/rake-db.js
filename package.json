@@ -44,7 +44,7 @@
   "dependencies": {
     "dotenv": "8.x",
     "enquirer": "^2.3.6",
-    "pg-adapter": "^1.1.58",
+    "pg-adapter": "^1.2.2",
     "ts-node": "^9.1.1"
   }
 }

@@ -64,7 +64,7 @@ export default class Migration extends Adapter {
   reverse: boolean
 
   constructor({ reverse, ...params }: AdapterProps & { reverse: boolean }) {
-    super({ ...params, pool: 1, log: false })
+    super({ ...params, pool: 1 })
     this.reverse = reverse
   }
 
