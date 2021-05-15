@@ -5,6 +5,7 @@ import Migration from './migration'
 import { Transaction } from 'pg-adapter'
 import { errorCodes } from './errorCodes'
 import { register } from 'ts-node'
+import { Value } from 'pg-adapter/dist/lib/quote'
 
 register({ compilerOptions: { module: 'CommonJS' } })
 
@@ -54,20 +55,38 @@ const getFiles = (migrationsPath: string, rollback: boolean) =>
     })
   })
 
-const run = (
+export const run = async (
   db: Migration,
-  fn: (t: Migration, up: boolean) => void,
+  fn: (t: Migration, up: boolean) => void | Promise<void>,
   version: string,
 ) =>
-  db.wrapperTransaction(db, async (t: Migration & Transaction) => {
-    fn(t, !db.reverse)
+  await db.wrapperTransaction(db, async (t: Migration & Transaction) => {
+    if (fn.toString().startsWith('async')) {
+      await fn(t, !db.reverse)
+    } else {
+      if (!db.reverse) {
+        fn(t, true)
+      } else {
+        const originalExec = t.exec
+        const argsList: [string | Promise<string>, Value?][] = [] // eslint-disable-line
+        t.exec = (...args) => {
+          argsList.push(args)
+          return Promise.resolve(undefined)
+        }
+        await fn(t, false)
+        t.exec = originalExec
+        for (const args of argsList.reverse()) {
+          await t.exec(...args)
+        }
+      }
+    }
     await t.sync()
     if (t.failed) return
     const sql = db.reverse
       ? `DELETE FROM "schemaMigrations" WHERE "version" = '${version}'`
       : `INSERT INTO "schemaMigrations" VALUES ('${version}')`
 
-    t.exec(sql).catch(noop)
+    await t.exec(sql).catch(noop)
   })
 
 const migrateFile = async (
