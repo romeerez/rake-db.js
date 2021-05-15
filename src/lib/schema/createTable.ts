@@ -1,8 +1,14 @@
 import Table from './table'
 import { addIndex } from './index'
 import { noop } from '../utils'
-import { Migration, TableCallback, TableOptions } from '../../types'
-import { columnChain } from './chain'
+import {
+  ForeignKeyFunction,
+  Migration,
+  TableCallback,
+  TableOptions,
+} from '../../types'
+import { ForeignKey } from './foreignKey'
+import { PrimaryKey } from './primaryKey'
 
 export class CreateTable extends Table {
   constructor(tableName: string, reverse: boolean, options: TableOptions = {}) {
@@ -13,28 +19,35 @@ export class CreateTable extends Table {
     }
   }
 
-  addColumnSql = (sql: string) => {
-    const query = [sql]
-    this.execute(query)
-    return columnChain(query, !this.reverse)
+  foreignKey: ForeignKeyFunction = (options) => {
+    const fkey = new ForeignKey('createTable', this, this.reverse, options)
+    this.lines.push(fkey)
+    return fkey
   }
 
   constraint = (name: string, sql?: string) =>
-    this.execute([`CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`])
+    this.execute(`CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`)
+
+  primaryKey = (columns: string[], name?: string) => {
+    const pkey = new PrimaryKey('create', columns, name)
+    this.lines.push(pkey)
+    return pkey
+  }
 
   __commit = (db: Migration, fn?: TableCallback) => {
     if (fn) fn(this)
 
     const sql = []
     sql.push(`CREATE TABLE "${this.tableName}" (`)
-    sql.push(
-      this.lines.length
-        ? '\n  ' +
-            this.lines
-              .map((arr) => (Array.isArray(arr) ? arr.join(' ') : arr))
-              .join(',\n  ')
-        : '',
-    )
+    if (this.lines.length) {
+      sql.push(
+        '\n  ' +
+          this.lines
+            .map((item) => (typeof item === 'string' ? item : item.toSql(this)))
+            .filter((string) => string)
+            .join(',\n  '),
+      )
+    }
     sql.push('\n)')
     db.exec(sql.join('')).catch(noop)
 

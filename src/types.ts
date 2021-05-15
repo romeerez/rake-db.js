@@ -1,6 +1,9 @@
 import Migration from './lib/migration'
 import Table from './lib/schema/table'
 import { Value } from 'pg-adapter/dist/lib/quote'
+import { Column } from './lib/schema/column'
+import { ForeignKey } from './lib/schema/foreignKey'
+import { CreateTable } from './lib/schema/createTable'
 
 export { Migration, Table }
 
@@ -27,7 +30,7 @@ export type ForeignKeyOptions = {
   index?: true | IndexOptions
 }
 
-export type ForeignKey = (params: ForeignKeyOptions) => void
+export type ForeignKeyFunction = (params: ForeignKeyOptions) => ForeignKey
 
 export type ColumnOptions = {
   primaryKey?: boolean
@@ -43,9 +46,15 @@ export type ColumnOptions = {
   scale?: number | string
   collate?: string
   using?: string
+  references?: {
+    table: string
+    column?: string
+    onUpdate?: OnUpdateOrDeleteAction
+    onDelete?: OnUpdateOrDeleteAction
+  }
 }
 
-export type TableCallback = (t: Table) => void
+export type TableCallback = (t: CreateTable) => void
 
 export type IndexOptions = {
   name?: string
@@ -69,7 +78,7 @@ export type ColumnFunction = (
   name: string,
   type: string,
   options?: ColumnOptions,
-) => ColumnChain
+) => Column
 
 export const ColumnTypes = {
   bigint: 'bigint',
@@ -79,6 +88,7 @@ export const ColumnTypes = {
   decimal: 'decimal',
   float: 'float8',
   integer: 'integer',
+  varchar: 'varchar',
   text: 'text',
   smallint: 'smallint',
   smallserial: 'smallserial',
@@ -112,20 +122,3 @@ export type OnUpdateOrDeleteAction =
   | 'set null'
   | 'SET DEFAULT'
   | 'set default'
-
-export type ColumnChain = {
-  required(): ColumnChain
-  // eslint-disable-next-line
-  default(value: any): ColumnChain
-  references(table: string): ReferencesChain
-  references(
-    table: string,
-    column: string,
-  ): Pick<ReferencesChain, 'onUpdate' | 'onDelete'>
-}
-
-export type ReferencesChain = {
-  column(column: string): Pick<ReferencesChain, 'onUpdate' | 'onDelete'>
-  onUpdate(action: OnUpdateOrDeleteAction): Pick<ReferencesChain, 'onDelete'>
-  onDelete(action: OnUpdateOrDeleteAction): Pick<ReferencesChain, 'onUpdate'>
-}

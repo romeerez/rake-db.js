@@ -3,7 +3,6 @@ import { CreateTable } from './schema/createTable'
 import { ChangeTable, ChangeTableCallback } from './schema/changeTable'
 import { noop, join } from './utils'
 import {
-  Table,
   TableOptions,
   JoinTableOptions,
   ColumnOptions,
@@ -47,7 +46,7 @@ const createJoinTable = (
   const firstColumnName = join(tableOne, 'id')
   const secondColumnName = join(tableTwo, 'id')
 
-  const fn = (t: Table) => {
+  const fn = (t: CreateTable) => {
     let column = t.column(firstColumnName, col.type, col)
     if (references) column.references(tableOne, 'id')
 
@@ -146,6 +145,14 @@ export default class Migration extends Adapter {
 
   dropForeignKey(table: string, params: ForeignKeyOptions) {
     this.changeTable(table, (t) => t.dropForeignKey(params))
+  }
+
+  addPrimaryKey(table: string, columns: string[], name?: string) {
+    this.changeTable(table, (t) => t.primaryKey(columns, name))
+  }
+
+  dropPrimaryKey(table: string, columns: string[], name?: string) {
+    this.changeTable(table, (t) => t.dropPrimaryKey(columns, name))
   }
 
   addIndex(table: string, name: string, options?: IndexOptions) {

@@ -1,11 +1,16 @@
 import Table from './table'
-import typeSql from './typeSql'
+import { Column } from './column'
 import { addIndex, dropIndex } from './index'
-import { addColumn, removeColumn } from './column'
 import { noop } from '../utils'
-import { Migration, ColumnOptions, IndexOptions, ForeignKey } from '../../types'
-import { columnChain } from './chain'
-import { foreignKey } from './foreignKey'
+import {
+  Migration,
+  ColumnOptions,
+  IndexOptions,
+  ForeignKeyFunction,
+  ColumnFunction,
+} from '../../types'
+import { ForeignKey } from './foreignKey'
+import { PrimaryKey } from './primaryKey'
 
 const addConstraint = (name: string, sql?: string) =>
   `ADD CONSTRAINT ${sql ? `"${name}" ${sql}` : name}`
@@ -15,22 +20,16 @@ const removeConstraint = (name: string) => `DROP CONSTRAINT "${name}"`
 export type ChangeTableCallback = (t: ChangeTable) => void
 
 export class ChangeTable extends Table {
-  addColumnSql = (sql: string) => {
-    const query = [`ADD COLUMN ${sql}`]
-    this.execute(query)
-    return columnChain(query, !this.reverse)
-  }
-
   constraint = (name: string, sql?: string) => {
-    this.execute([
+    this.execute(
       this.reverse ? removeConstraint(name) : addConstraint(name, sql),
-    ])
+    )
   }
 
   removeConstraint = (name: string, sql?: string) =>
-    this.execute([
+    this.execute(
       this.reverse ? addConstraint(name, sql) : removeConstraint(name),
-    ])
+    )
 
   dropTimestamps = (options?: ColumnOptions) => {
     this.reverse = !this.reverse
@@ -38,61 +37,79 @@ export class ChangeTable extends Table {
     this.reverse = !this.reverse
   }
 
-  alterColumn = (name: string, sql: string) =>
-    this.execute([`ALTER COLUMN "${name}" ${sql}`])
+  column: ColumnFunction = (name, type, options = {}) => {
+    if (this.reverse) {
+      this.removedColumns.push(name)
+      const column = new Column('drop', name, options, type)
+      this.lines.push(column)
+      return column
+    }
 
-  change = (name: string, options: ColumnOptions) => {
-    const { reverse } = this
-    this.reverse = false
+    const column = new Column('add', name, options, type)
+    this.lines.push(column)
+    return column
+  }
 
-    if ((options.type && options.default) || options.default === null)
-      this.alterColumn(name, `DROP DEFAULT`)
-    if (options.type)
-      this.alterColumn(name, `TYPE ${typeSql(options.type, options)}`)
-    if (options.default !== undefined)
-      this.alterColumn(name, `SET DEFAULT ${options.default}`)
-    if (options.null !== undefined) this.null(name, options.null)
-    if (options.index) this.index(name, options.index)
-    else if (options.index === false) this.dropIndex(name, options)
-    if ('comment' in options && options.comment)
-      this.comments.push([name, options.comment])
-
-    this.reverse = reverse
+  change = (name: string, options?: ColumnOptions) => {
+    const column = new Column('alter', name, options)
+    this.lines.push(column)
+    return column
   }
 
   rename = (from: string, to: string) => {
     const f = this.reverse ? to : from
     const t = this.reverse ? from : to
-    this.execute([`RENAME COLUMN "${f}" TO "${t}"`])
+    this.execute(`RENAME COLUMN "${f}" TO "${t}"`)
   }
 
-  comment = (column: string, message: string) =>
+  comment = (column: string, message: string) => {
     this.comments.push([column, message])
+  }
 
-  default = (column: string, value: unknown) =>
-    this.alterColumn(
-      column,
-      value === null ? 'DROP DEFAULT' : `SET DEFAULT ${value}`,
-    )
+  default = (column: string, value: unknown) => {
+    this.lines.push(new Column('alter', column, { default: value }))
+  }
 
-  null = (column: string, value: boolean) =>
-    this.alterColumn(column, value ? 'DROP NOT NULL' : 'SET NOT NULL')
+  null = (column: string, value: boolean) => {
+    this.lines.push(new Column('alter', column, { null: value }))
+  }
 
   drop = (name: string, type: string, options?: ColumnOptions) => {
-    if (this.reverse)
-      return this.addColumnSql(addColumn(`"${name}"`, type, options))
-    this.execute([removeColumn(`"${name}"`, type, options)])
+    const column = new Column(
+      this.reverse ? 'add' : 'drop',
+      name,
+      options,
+      type,
+    )
+    this.lines.push(column)
+    return column
   }
 
   dropIndex = (name: string | string[], options: true | IndexOptions = {}) =>
     this.indices.push([this.reverse, name, options])
 
-  foreignKey: ForeignKey = (params) => {
-    foreignKey('changeTable', this, this.reverse, params)
+  foreignKey: ForeignKeyFunction = (options) => {
+    const fkey = new ForeignKey('changeTable', this, this.reverse, options)
+    this.lines.push(fkey)
+    return fkey
   }
 
-  dropForeignKey: ForeignKey = (params) => {
-    foreignKey('changeTable', this, !this.reverse, params)
+  dropForeignKey: ForeignKeyFunction = (options) => {
+    const fkey = new ForeignKey('changeTable', this, !this.reverse, options)
+    this.lines.push(fkey)
+    return fkey
+  }
+
+  primaryKey = (columns: string[], name?: string) => {
+    const pkey = new PrimaryKey('add', columns, name)
+    this.lines.push(pkey)
+    return pkey
+  }
+
+  dropPrimaryKey = (columns: string[], name?: string) => {
+    const pkey = new PrimaryKey('drop', columns, name)
+    this.lines.push(pkey)
+    return pkey
   }
 
   __commit = (db: Migration, fn?: ChangeTableCallback) => {
@@ -101,12 +118,16 @@ export class ChangeTable extends Table {
     if (fn) fn(this)
 
     if (this.lines.length) {
-      let sql = `ALTER TABLE "${this.tableName}"`
-      sql +=
-        '\n' +
-        this.lines
-          .map((arr) => (Array.isArray(arr) ? arr.join(' ') : arr))
-          .join(',\n')
+      const lines: string[] = []
+      this.lines.forEach((line) => {
+        const item = typeof line === 'string' ? line : line.toSql(this)
+
+        if (!item) return
+
+        typeof item === 'string' ? lines.push(item) : lines.push(...item)
+      })
+
+      const sql = `ALTER TABLE "${this.tableName}"\n` + lines.join(',\n')
       db.exec(sql).catch(noop)
     }
 

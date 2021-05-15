@@ -1,67 +1,68 @@
 import { join } from '../utils'
-import { ForeignKeyOptions, IndexOptions } from '../../types'
+import { ForeignKeyOptions } from '../../types'
+import { CreateTable } from './createTable'
+import { ChangeTable } from './changeTable'
 
-export const foreignKey = (
-  operation: 'createTable' | 'changeTable',
-  table: {
-    tableName: string
-    reverse: boolean
-    removedColumns: string[]
-    execute(sql: string[]): void
-    index(column: string | string[], options: true | IndexOptions): void
-    dropIndex?(column: string | string[], options: true | IndexOptions): void
-  },
-  reverse: boolean,
-  params: ForeignKeyOptions,
-) => {
-  if (operation === 'createTable' && reverse) {
-    return
-  } else if (
-    operation === 'changeTable' &&
-    reverse &&
-    (Array.isArray(params.column)
-      ? params.column.some((col) => table.removedColumns.includes(col))
-      : table.removedColumns.includes(params.column))
-  ) {
-    return
-  }
+export class ForeignKey {
+  constructor(
+    public action: 'createTable' | 'changeTable',
+    public table: CreateTable | ChangeTable,
+    public reverse: boolean,
+    public options: ForeignKeyOptions,
+  ) {}
 
-  const name =
-    params.name ||
-    (Array.isArray(params.column)
-      ? join(table.tableName, ...(params.column as string[]), 'fkey')
-      : join(table.tableName, params.column, 'fkey'))
+  toSql(): undefined | string {
+    const { action, table, reverse, options } = this
 
-  const columns = Array.isArray(params.column)
-    ? params.column.map((col) => `"${col}"`).join(', ')
-    : `"${params.column}"`
+    if (action === 'createTable' && reverse) {
+      return
+    } else if (
+      action === 'changeTable' &&
+      reverse &&
+      (Array.isArray(options.column)
+        ? options.column.some((col) => table.removedColumns.includes(col))
+        : table.removedColumns.includes(options.column))
+    ) {
+      return
+    }
 
-  const foreignColumns = Array.isArray(params.references)
-    ? params.references.map((col) => `"${col}"`).join(', ')
-    : `"${params.references}"`
+    const name =
+      options.name ||
+      (Array.isArray(options.column)
+        ? join(table.tableName, ...(options.column as string[]), 'fkey')
+        : join(table.tableName, options.column, 'fkey'))
 
-  const onUpdate = params.onUpdate ? ` ON UPDATE ${params.onUpdate}` : ''
-  const onDelete = params.onDelete ? ` ON DELETE ${params.onDelete}` : ''
+    const columns = Array.isArray(options.column)
+      ? options.column.map((col) => `"${col}"`).join(', ')
+      : `"${options.column}"`
 
-  const prefix = operation === 'createTable' ? '' : reverse ? 'DROP' : 'ADD'
+    const foreignColumns = Array.isArray(options.references)
+      ? options.references.map((col) => `"${col}"`).join(', ')
+      : `"${options.references}"`
 
-  const sql = [prefix, `CONSTRAINT "${name}"`]
+    const onUpdate = options.onUpdate ? ` ON UPDATE ${options.onUpdate}` : ''
+    const onDelete = options.onDelete ? ` ON DELETE ${options.onDelete}` : ''
 
-  if (operation !== 'changeTable' || !reverse) {
-    sql.push(
-      `FOREIGN KEY (${columns}) REFERENCES "${params.table}"(${foreignColumns})${onUpdate}${onDelete}`,
-    )
-  }
+    const prefix = action === 'createTable' ? '' : reverse ? 'DROP' : 'ADD'
 
-  if (operation === 'changeTable' && reverse) {
-    sql.push('CASCADE')
-  }
+    const sql = [prefix, `CONSTRAINT "${name}"`]
 
-  table.execute([sql.join(' ')])
+    if (action !== 'changeTable' || !reverse) {
+      sql.push(
+        `FOREIGN KEY (${columns}) REFERENCES "${options.table}"(${foreignColumns})${onUpdate}${onDelete}`,
+      )
+    }
 
-  if (params.index) {
-    if (reverse !== table.reverse && table.dropIndex)
-      table.dropIndex(params.column, params.index)
-    else table.index(params.column, params.index)
+    if (action === 'changeTable' && reverse) {
+      sql.push('CASCADE')
+    }
+
+    if (options.index) {
+      if (reverse !== table.reverse && (table as ChangeTable).dropIndex)
+        (table as ChangeTable).dropIndex(options.column, options.index)
+      else table.index(options.column, options.index)
+    }
+
+    return sql.join(' ')
   }
 }

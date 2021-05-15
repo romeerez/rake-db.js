@@ -206,13 +206,25 @@ db.createTable(
     comment: 'table comment', // add comment to table
   },
   (t) => {
-    // See "Add column" for details
-    t.column('column_name', 'column_type')
+    // See "Add column" for available options
+    t.column('column_name', 'column_type', { ...columnOptions })
+    t.string('text_column', { ...columnOptions })
 
     // column is chainable with methods:
     t.column('name')
       .required() // NOT NULL
-      .default('value') // set default value
+      .default('raw sql') // set default value - RAW SQL!
+      .default("'string default'") // quote strings manually in default
+      .type('integer') // can set type
+      .index() // add default index
+      .index({ ...indexOptions }) // see addIndex section for options
+      .unique() // add unique index
+      .unique({ ...indexOptions }) // can accept options
+      .comment('this is awesome column') // add comment to column
+      .length(42) // can set length, for varchar for example
+      .precision(10).scale(5) // precision and scale for numeric types
+      .collate('value'), // see COLLATE in postgres docs
+      .using('value'), // see USING in postgres docs
       .references('table', 'column') // add REFERENCES statement
       .onUpdate('cascade') // ON UPDATE for REFERENCES
       .onDelete('cascade') // ON DELETE for REFERENCES
@@ -222,6 +234,9 @@ db.createTable(
 
     // See "Add timestamps"
     t.timestamps()
+
+    // set composite primary key
+    f.primaryKey(['column1', 'column2'])
 
     // See "Add foreign key"
     t.foreignKey({
@@ -300,7 +315,10 @@ CREATE UNIQUE INDEX "apple_orange_unique_index" ON "apple_orange" ("apple_id", "
 ```js
 db.changeTable('table_name', (t) => {
   // adding new column, index, foreign key - all the same as in createTable
-  t.column('name', 'type')
+  t.column('name', 'type', { ...options })
+
+  // column is chainable just as in createTable
+  t.string('text_column').required().primaryKey().references('other_table', 'column')
 
   t.change('column_name', {
     type: 'integer', // change column type
@@ -317,6 +335,12 @@ db.changeTable('table_name', (t) => {
 
   t.default('column_name', 'new default value') // change default value
   t.default('column_name', null) // remove default value
+
+  // Drop primary key
+  f.dropPrimaryKey(['column1', 'column2'])
+
+  // Add composite primary key
+  f.primaryKey(['column1', 'column2'])
 
   t.drop('column_name', 'type', ColumnOptions) // drop column, type and options are for rolling back
 
@@ -442,6 +466,26 @@ db.addTimestamps('table', options) // See "Add column" for options
 
 ```js
 db.dropTimestamps('table', options)
+```
+
+### Add primary key
+
+Add composite primary key, will create constraint with name `table_pkey`
+
+Optionally can take second argument for custom constraint name
+
+```js
+db.addPrimaryKey('table', ['column1', 'column2'])
+db.addPrimaryKey('table', ['column1', 'column2'], 'customConstraintName')
+```
+
+### Drop primary key
+
+The same arguments as when adding primary key so migration is reversible
+
+```js
+db.dropPrimaryKey(['column1', 'column2'])
+db.dropPrimaryKey(['column1', 'column2'], 'customConstraintName')
 ```
 
 ### Add foreign key
