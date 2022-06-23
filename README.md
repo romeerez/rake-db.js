@@ -41,6 +41,18 @@ Has an option to generate names of columns, indices and foreign keys in camelCas
 
 ## Get started
 
+Install:
+
+```sh
+npm i rake-db
+```
+
+`rake-db` has peer dependencies on `ts-node` and `typescript`, if you don't have them already in your project need to install:
+
+```sh
+npm i ts-node typescript
+```
+
 Add a script into `package.json`:
 ```json
 {
