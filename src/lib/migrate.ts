@@ -16,8 +16,8 @@ type MigrationFile = {
 
 const getMigratedVersionsQuery = (db: Migration) =>
   db.value(
-    `SELECT COALESCE(json_agg("schemaMigrations".version ORDER BY version), '[]')` +
-      `FROM "schemaMigrations"`,
+    `SELECT COALESCE(json_agg(version ORDER BY version), '[]')` +
+      `FROM "public"."schemaMigrations"`,
   )
 
 const getMigratedVersions = async (db: Migration) => {
@@ -83,8 +83,8 @@ export const run = async (
     await t.sync()
     if (t.failed) return
     const sql = db.reverse
-      ? `DELETE FROM "schemaMigrations" WHERE "version" = '${version}'`
-      : `INSERT INTO "schemaMigrations"
+      ? `DELETE FROM "public"."schemaMigrations" WHERE "version" = '${version}'`
+      : `INSERT INTO "public"."schemaMigrations"
          VALUES ('${version}')`
 
     await t.exec(sql).catch(noop)
