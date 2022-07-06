@@ -59,7 +59,7 @@ export const run = async (
   db: Migration,
   fn: (t: Migration, up: boolean) => void | Promise<void>,
   version: string,
-) =>
+) => {
   await db.wrapperTransaction(db, async (t: Migration & Transaction) => {
     if (fn.toString().startsWith('async')) {
       await fn(t, !db.reverse)
@@ -71,12 +71,12 @@ export const run = async (
         const argsList: [string | Promise<string>, Value?][] = [] // eslint-disable-line
         t.exec = (...args) => {
           argsList.push(args)
-          return Promise.resolve(undefined)
+          return Promise.resolve()
         }
         await fn(t, false)
         t.exec = originalExec
-        for (const args of argsList.reverse()) {
-          await t.exec(...args)
+        for (const [sql, value] of argsList.reverse()) {
+          await t.exec(sql, value)
         }
       }
     }
@@ -84,10 +84,20 @@ export const run = async (
     if (t.failed) return
     const sql = db.reverse
       ? `DELETE FROM "schemaMigrations" WHERE "version" = '${version}'`
-      : `INSERT INTO "schemaMigrations" VALUES ('${version}')`
+      : `INSERT INTO "schemaMigrations"
+         VALUES ('${version}')`
 
     await t.exec(sql).catch(noop)
   })
+}
+
+type UserMigration = {
+  change?: (t: Migration, up: boolean) => void | Promise<void>
+  up?: (t: Migration) => void | Promise<void>
+  down?: (t: Migration) => void | Promise<void>
+  before?: (t: Migration, up: boolean) => void | Promise<void>
+  after?: (t: Migration, up: boolean) => void | Promise<void>
+}
 
 const migrateFile = async (
   db: Migration,
@@ -96,15 +106,32 @@ const migrateFile = async (
   file: string,
 ) => {
   const filePath = path.resolve(migrationsPath, file)
-  const migration = require(filePath)
+  const migration = require(filePath) as UserMigration
   if (!db.reverse && !migration.up && !migration.change)
     throw new Error(`Migration ${file} does not contain up or change exports`)
   else if (!migration.down && !migration.change)
     throw new Error(`Migration ${file} does not contain down or change exports`)
 
-  for (const key in migration)
-    if (key === (db.reverse ? 'down' : 'up') || key === 'change')
-      await run(db, migration[key], version)
+  if (migration.before) {
+    await migration.before(db, !db.reverse)
+  }
+
+  for (const key in migration) {
+    if (key === (db.reverse ? 'down' : 'up') || key === 'change') {
+      await run(
+        db,
+        (migration[key] as unknown) as Exclude<
+          UserMigration['change'],
+          undefined
+        >,
+        version,
+      )
+    }
+  }
+
+  if (migration.after) {
+    await migration.after(db, !db.reverse)
+  }
 
   console.info(`${filePath} ${db.reverse ? 'rolled back' : 'migrated'}`)
 }
