@@ -1,3 +1,7 @@
+# This is the old repo
+
+This repo is remaining for history, `rake-db` was merged to monorepo into [orchid-orm](https://github.com/romeerez/orchid-orm/tree/main/packages/rake-db).
+
 # rake-db
 
 This is a migration tool for Postgres which is highly inspired by Ruby on Rails migrations, main features are:
